@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gazelle_haskell_modules",
+    srcs = [
+        "dependency_resolution.go",
+        "lang.go",
+        "rule_generation.go",
+    ],
+    importpath = "github.com/tweag/gazelle_haskell_modules/gazelle_haskell_modules",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_gazelle//config:go_default_library",
+        "@bazel_gazelle//label:go_default_library",
+        "@bazel_gazelle//language:go_default_library",
+        "@bazel_gazelle//language/go:go_default_library",
+        "@bazel_gazelle//language/proto:go_default_library",
+        "@bazel_gazelle//repo:go_default_library",
+        "@bazel_gazelle//resolve:go_default_library",
+        "@bazel_gazelle//rule:go_default_library",
+        "@bazel_gazelle//walk:go_default_library",
+        "@com_github_bazelbuild_buildtools//build:go_default_library",
+        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+    ],
+)
