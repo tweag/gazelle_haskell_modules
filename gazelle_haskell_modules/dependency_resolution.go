@@ -37,9 +37,9 @@ func setNonHaskellModuleDepsAttribute(
 ) {
 	modules := importData.Modules
 	for _, f := range importData.Srcs {
-		mod := findModuleLabelByModuleFilePath(repoRoot, ix, f, from)
-		if mod == nil {
-			log.Fatal("Can't find source in the index: " + f)
+		mod, err := findModuleLabelByModuleFilePath(repoRoot, ix, f, r.Name(), from)
+		if err != nil {
+			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
 		modules[*mod] = true
 	}
@@ -156,21 +156,35 @@ func findModuleLabelByModuleFilePath(
 	repoRoot string,
 	ix *resolve.RuleIndex,
 	moduleFilePath string,
+	componentName string,
 	from label.Label,
-) *label.Label {
+) (*label.Label, error) {
 	relModuleFilePath, err := filepath.Rel(repoRoot, moduleFilePath)
 	if err != nil {
-		log.Fatal("Can't make src relative: " + moduleFilePath, err)
+		return nil, fmt.Errorf("Can't make src relative: %q: %v", moduleFilePath, err)
 	}
 
 	spec := resolve.ImportSpec{gazelleHaskellModulesName, "filepath:" + relModuleFilePath}
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
-	if len(res) > 0 {
+	for _, r := range res {
+		rComponentName := strings.SplitN(r.Label.Name, ".", 2)[0]
+		if componentName == rComponentName {
+			lbl := rel(r.Label, from)
+			return &lbl, nil
+		}
+	}
+	if len(res) > 1 {
+		labels := make([]label.Label, len(res))
+		for i, r := range res {
+			labels[i] = rel(r.Label, from)
+		}
+		return nil, fmt.Errorf("Multiple rules define %q: %v", moduleFilePath, labels)
+	} else if len(res) == 1 {
 		lbl := rel(res[0].Label, from)
-		return &lbl
+		return &lbl, nil
 	} else {
-		return nil
+		return nil, nil
 	}
 }
 
