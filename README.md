@@ -92,7 +92,7 @@ defined with a Haskell rule, then the dependency is dropped since the
 `haskell_module` rule is expected to depend directly on the modules of
 that dependency if at all.
 
-If the dependency isn't defined in the local repo, or isn't defined with
+If the dependency isn't defined in the same repo, or isn't defined with
 Haskell rules, then the dependcy is added since the source module might
 depend on it without `gazelle_haskell_modules` being able to determine it.
 

@@ -26,7 +26,7 @@ import (
 // Adds to the deps attribute the labels of all haskell_module
 // rules originated from this rule.
 //
-// Removes dependencies defined locally. haskell_module rules
+// Removes dependencies defined in the same repo. haskell_module rules
 // will depend on the modules of those dependencies instead.
 func setNonHaskellModuleDepsAttribute(
 	repoRoot string,
@@ -51,7 +51,7 @@ func setNonHaskellModuleDepsAttribute(
 	}
 	sort.Strings(moduleStrings)
 
-	// Skip dependencies defined locally. Modules will depend directly on those.
+	// Skip dependencies defined in the same repo. Modules will depend directly on those.
 	deps := make([]string, 0, len(importData.Deps))
 	for dep, _ := range importData.Deps {
 	    if !isIndexedNonHaskellModuleRule(ix, dep) {
@@ -67,8 +67,8 @@ func setNonHaskellModuleDepsAttribute(
 // is ignored.
 //
 // Dependencies of the originating haskell_library or haskell_binary
-// rule are copied, excluding those dependencies that are locally
-// defined and not imported in the module source.
+// rule are copied, excluding those dependencies that are defined in
+// the same repo and not imported in the module source.
 func setHaskellModuleDepsAttribute(
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
