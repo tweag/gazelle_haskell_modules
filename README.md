@@ -78,6 +78,9 @@ Build and run gazelle with
 bazel run //:gazelle
 ```
 
+Gazelle's [fix command][fix-command] can be used to delete rules when
+components are removed from the cabal file.
+
 ## Rule generation
 
 Each module listed in the `srcs` attribute of a Haskell rule originates
@@ -219,7 +222,7 @@ with `-XPackageImports`.
 - [ ] Check if linker options need special treatment
 - [ ] Copy `data` from the originating rule (?)
 - [X] Document how `gazelle_haskell_modules` works
-- [ ] Support the fix command to remove outdated `haskell_module` rules
+- [X] Support the fix command to remove outdated `haskell_module` rules
 - [X] See whether we can run `gazelle_haskell_modules` and `gazelle_cabal` in one pass
 - [ ] Implement tests
 - [ ] Setup CI

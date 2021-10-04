@@ -145,8 +145,30 @@ func (*gazelleHaskellModulesLang) GenerateRules(args language.GenerateArgs) lang
 }
 
 func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
-	return
+	if !c.ShouldFix || f == nil {
+		return
+	}
+
+	ruleInfos := rulesToRuleInfos(path.Dir(f.Path), f.Rules, c.RepoName, f.Pkg)
+
+	ruleNameSet := make(map[string]bool, len(ruleInfos))
+	for _, info := range ruleInfos {
+		rName := ruleNameFromRuleInfo(info)
+		if info.OriginatingRule.Name() != rName {
+			ruleNameSet[rName] = true
+		}
+	}
+
+	for _, r := range f.Rules {
+		if !r.ShouldKeep() && r.Kind() == "haskell_module" {
+			if _, ok := ruleNameSet[r.Name()]; !ok {
+				r.Delete()
+			}
+		}
+	}
+	f.Sync()
 }
+
 
 ////////////////////////////////
 // Indexing
