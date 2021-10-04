@@ -20,9 +20,9 @@ import (
 // Extracts the source files from Haskell rules and creates
 // haskell_module rules to build them.
 //
-// For existing haskell_module rules, it sets the mod_name
+// For existing haskell_module rules, it sets the indexing_mod_name
 // private attribute as a side effect!
-// mod_name is needed when indexing the rule.
+// indexing_mod_name is needed when indexing the rule.
 func rulesToRuleInfos(pkgRoot string, rules []*rule.Rule, repo string, pkg string) []*RuleInfo {
 	ruleInfoss0, reverseDeps := nonHaskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg)
 	ruleInfoss1 := haskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg, reverseDeps)
@@ -135,7 +135,7 @@ func haskellModuleRulesToRuleInfos(
 
 		ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
 
-		r.SetPrivateAttr("mod_name", ruleInfo.ModuleData.ModuleName)
+		r.SetPrivateAttr("indexing_mod_name", ruleInfo.ModuleData.ModuleName)
 	}
 	return ruleInfoss
 }
@@ -177,7 +177,7 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 			ruleName = ruleInfo.OriginatingRule.Name() + "." + ruleInfo.ModuleData.ModuleName
 		}
 		r := rule.NewRule("haskell_module", ruleName)
-		r.SetPrivateAttr("mod_name", ruleInfo.ModuleData.ModuleName)
+		r.SetPrivateAttr("indexing_mod_name", ruleInfo.ModuleData.ModuleName)
 		file, _ := filepath.Rel(pkgRoot, ruleInfo.ModuleData.FilePath)
 		r.SetAttr("src", file)
 		r.SetAttr("src_strip_prefix", srcStripPrefix(file, ruleInfo.ModuleData.ModuleName))

@@ -153,10 +153,10 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 ////////////////////////////////
 
 func getModuleNameFromRule(r *rule.Rule) string {
-	if r.PrivateAttr("mod_name") == nil {
-		log.Fatal("Error reading mod_name of " + r.Name())
+	if r.PrivateAttr("indexing_mod_name") == nil {
+		log.Fatal("Error reading indexing_mod_name of " + r.Name())
 	}
-	return r.PrivateAttr("mod_name").(string)
+	return r.PrivateAttr("indexing_mod_name").(string)
 }
 
 func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string {
