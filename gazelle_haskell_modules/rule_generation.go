@@ -172,10 +172,7 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 	theRules := make([]*rule.Rule, len(ruleInfos))
 	theImports := make([]interface{}, len(ruleInfos))
 	for i, ruleInfo := range ruleInfos {
-		ruleName := ruleInfo.OriginatingRule.Name()
-		if ruleInfo.OriginatingRule.Kind() != "haskell_module" {
-			ruleName = ruleInfo.OriginatingRule.Name() + "." + ruleInfo.ModuleData.ModuleName
-		}
+		ruleName := ruleNameFromRuleInfo(ruleInfo)
 		r := rule.NewRule("haskell_module", ruleName)
 		r.SetPrivateAttr("indexing_mod_name", ruleInfo.ModuleData.ModuleName)
 		file, _ := filepath.Rel(pkgRoot, ruleInfo.ModuleData.FilePath)
@@ -457,4 +454,12 @@ func SetArrayAttrExpr(r *rule.Rule, attrName string, expr build.Expr) {
     if expr != nil && !isEmptyListExpr(expr) {
         r.SetAttr(attrName, expr)
     }
+}
+
+func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
+	if ruleInfo.OriginatingRule.Kind() != "haskell_module" {
+		return ruleInfo.OriginatingRule.Name() + "." + ruleInfo.ModuleData.ModuleName
+	} else {
+		return ruleInfo.OriginatingRule.Name()
+	}
 }
