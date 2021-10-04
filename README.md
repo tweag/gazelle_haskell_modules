@@ -215,6 +215,7 @@ with `-XPackageImports`.
 - [X] Lift restriction to name custom `haskell_module` rules as `<package>.<module>`
 - [X] Propagate compiler flags and other attributes of libraries, tests, and binaries, to `haskell_module` rules listed in the dependencies.
 - [X] Use the `modules` attribute of `haskell_library` instead of `deps`
+- [X] Address feedback from code review session.
 - [ ] Check if linker options need special treatment
 - [ ] Copy `data` from the originating rule (?)
 - [X] Document how `gazelle_haskell_modules` works
