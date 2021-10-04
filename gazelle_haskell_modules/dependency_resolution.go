@@ -106,11 +106,11 @@ func setHaskellModuleDepsAttribute(
 // The label is chosen according to the first of the following
 // criteria that is met:
 //
-// 1. If mapDep contains a dependency of the form <pkg>.<the_module_name>,
+// 1. If mapDep contains only one dependency of the form <pkg>.<the_module_name>,
 // it is chosen.
 //
-// 2. If multiple libraries in mapDep contain the same module,
-// one of them is chosen.
+// 2. If only one library in mapDep contains the given module,
+// it is chosen.
 //
 // 3. If there is only one rule defining the module in the repo,
 // it is chosen.
@@ -128,20 +128,37 @@ func findModuleLabelByModuleName(
 	spec := resolve.ImportSpec{gazelleHaskellModulesName, "module_name:" + moduleName}
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
+	var finalLabel *label.Label
 	for _, r := range res {
 		if _, ok := mapDep[r.Label]; ok {
-			lbl := rel(r.Label, from)
-			return &lbl, nil
+			if finalLabel == nil {
+				lbl := rel(r.Label, from)
+				finalLabel = &lbl
+			} else {
+				return nil, fmt.Errorf("Multiple rules define %s: %v %v", moduleName, *finalLabel, r.Label)
+			}
 		}
 	}
+	if finalLabel != nil {
+		return finalLabel, nil
+	}
+
 	for _, r := range res {
 		pkgName := strings.SplitN(r.Label.Name, ".", 2)[0]
 		pkgLabel := label.New(from.Repo, from.Pkg, pkgName)
 		if _, ok := mapDep[pkgLabel]; ok {
-			lbl := rel(r.Label, from)
-			return &lbl, nil
+			if finalLabel == nil {
+				lbl := rel(r.Label, from)
+				finalLabel = &lbl
+			} else {
+				return nil, fmt.Errorf("Multiple rules define %s: %v %v", moduleName, *finalLabel, r.Label)
+			}
 		}
 	}
+	if finalLabel != nil {
+		return finalLabel, nil
+	}
+
 	if len(res) == 1 {
 		lbl := rel(res[0].Label, from)
 		return &lbl, nil
