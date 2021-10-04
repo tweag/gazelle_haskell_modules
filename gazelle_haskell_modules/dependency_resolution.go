@@ -145,7 +145,7 @@ func findModuleLabelByModuleName(
 
 	for _, r := range res {
 		pkgName := strings.SplitN(r.Label.Name, ".", 2)[0]
-		pkgLabel := label.New(from.Repo, from.Pkg, pkgName)
+		pkgLabel := label.New(r.Label.Repo, r.Label.Pkg, pkgName)
 		if _, ok := mapDep[pkgLabel]; ok {
 			if finalLabel == nil {
 				lbl := rel(r.Label, from)
