@@ -169,6 +169,12 @@ of a Haskell rule to be built. It would be possible to implement
 a mechanism to discover files automatically, say, if they are close
 enough to other files that are build by Haskell rules.
 
+### Support for hidden_modules
+
+Currently, the generator allows modules to depend on hidden modules
+of dependencies. This is something that should be changed eventually
+so the generator fails in these cases.
+
 ### CPP support
 
 CPP directives in source files are ignored when scanning for imports.
