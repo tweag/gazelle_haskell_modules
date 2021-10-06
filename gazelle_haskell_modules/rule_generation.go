@@ -190,6 +190,7 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 
 		theRules[i] = r
 		theImports[i] = &HModuleImportData {
+			OriginatingRule: ruleInfo.OriginatingRule,
 			Deps: ruleInfo.Deps,
 			ImportedModules: ruleInfo.ModuleData.ImportedModules,
 		}
@@ -202,6 +203,7 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 }
 
 func addNonHaskellModuleRules(
+	c *Config,
 	pkgRoot string,
 	repo string,
 	pkg string,
@@ -211,6 +213,9 @@ func addNonHaskellModuleRules(
 	haskellRules := make([]*rule.Rule, 0, len(rules))
 	imports := make([]interface{}, 0, len(rules))
 	for _, r := range rules {
+		if c.EraseLibraryBoundaries && r.Kind() == "haskell_library" {
+			continue
+		}
 		if isNonHaskellModule(r.Kind()) {
 			newr := rule.NewRule(r.Kind(), r.Name())
 			for _, k := range r.AttrKeys() {
@@ -326,6 +331,7 @@ type RuleInfo struct {
 }
 
 type HModuleImportData struct {
+	OriginatingRule *rule.Rule
 	Deps map[label.Label]bool // Absolute labels of the dependencies
 	ImportedModules []string
 }

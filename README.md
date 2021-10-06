@@ -81,6 +81,18 @@ bazel run //:gazelle
 Gazelle's [fix command][fix-command] can be used to delete rules when
 components are removed from the cabal file.
 
+## Directives
+
+```python
+# gazelle:haskell_modules_erase_library_boundaries true
+```
+Instructs `gazelle_haskell_modules` to eliminate dependencies on
+libraries and use instead dependencies on `haskell_module` rules.
+Only the dependencies of `haskell_binary`, `haskell_test`, and
+`haskell_module` rules are affected. In particular, `haskell_library`
+rules are unmodified. Erasing library boundaries isn't compatible
+with source files using [PackageImports][PackageImports].
+
 ## Rule generation
 
 Each module listed in the `srcs` attribute of a Haskell rule originates
@@ -88,16 +100,18 @@ a `haskell_module` rule with name `<pkg>.<module>`. Some attributes
 are copied from the originating rule to the `haskell_module` rule, like
 `ghcopts`, `tools`, and `extra_srcs`.
 
-The `deps` attribute is managed in a special way though. Each dependency
+If library boundaries are not erased, the `deps` attribute is copied from
+the originating rule as well. If library boundaries are erased, each dependency
 is considered for addition to the `deps` attribute of a `haskell_module`
-rule. If the dependency is defined in the current repository, and it is
-defined with a Haskell rule, then the dependency is dropped since the
+rule. If the dependency is defined in the current repository with a
+`haskell_library` rule, then the dependency is dropped since the
 `haskell_module` rule is expected to depend directly on the modules of
 that dependency if at all.
 
 If the dependency isn't defined in the same repo, or isn't defined with
-Haskell rules, then the dependcy is added since the source module might
-depend on it without `gazelle_haskell_modules` being able to determine it.
+a `haskell_library` rule, then the dependency is added since the source
+module might depend on it without `gazelle_haskell_modules` being able
+to determine it.
 
 ### Dependencies of non-haskell\_module rules
 
@@ -124,9 +138,9 @@ error.
 Note that `gazelle_haskell_modules` will always chose the right module
 when generating new `haskell_module` rules because the list of
 dependencies in the originating rule allows to determine from which
-library imports are coming from. Some of these dependencies are erased
-later on, though, so they aren't available when the `haskell_module`
-rules need to be updated.
+library imports are coming from. If library boundaries are erased,
+some of these dependencies are erased later on, though, so they won't
+be available when the `haskell_module` rules need to be updated.
 
 ## Implementation
 
@@ -226,6 +240,7 @@ with `-XPackageImports`.
 - [X] Propagate compiler flags and other attributes of libraries, tests, and binaries, to `haskell_module` rules listed in the dependencies.
 - [X] Use the `modules` attribute of `haskell_library` instead of `deps`
 - [X] Address feedback from code review session.
+- [X] Implement gazelle directive to erase library boundaries
 - [ ] Check if linker options need special treatment
 - [ ] Copy `data` from the originating rule (?)
 - [X] Document how `gazelle_haskell_modules` works
@@ -255,4 +270,5 @@ Have questions? Need help? Tweet at
 [gazelle]: https://github.com/bazelbuild/bazel-gazelle
 [go-part]: gazelle_haskell_modules/lang.go
 [go]: https://golang.org
+[PackageImports]: https://downloads.haskell.org/~ghc/9.0.1/docs/html/users_guide/exts/package_qualified_imports.html
 [rules_haskell]: https://github.com/tweag/rules_haskell

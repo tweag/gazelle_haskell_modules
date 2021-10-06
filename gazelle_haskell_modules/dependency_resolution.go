@@ -74,6 +74,7 @@ import (
 // Removes dependencies defined in the same repo. haskell_module rules
 // will depend on the modules of those dependencies instead.
 func setNonHaskellModuleDepsAttribute(
+	c *Config,
 	repoRoot string,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
@@ -99,7 +100,7 @@ func setNonHaskellModuleDepsAttribute(
 	// Skip dependencies defined in the same repo. Modules will depend directly on those.
 	deps := make([]string, 0, len(importData.Deps))
 	for dep, _ := range importData.Deps {
-	    if !isIndexedNonHaskellModuleRule(ix, dep) {
+	    if !c.EraseLibraryBoundaries || !isIndexedNonHaskellModuleRule(ix, dep) {
 			deps = append(deps, rel(dep, from).String())
 		}
 	}
@@ -119,11 +120,24 @@ func setNonHaskellModuleDepsAttribute(
 // rule are copied, excluding those dependencies that are defined in
 // the same repo and not imported in the module source.
 func setHaskellModuleDepsAttribute(
+	c *Config,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
 	importData *HModuleImportData,
 	from label.Label,
 ) {
+	if !c.EraseLibraryBoundaries {
+		rLabel := label.New(from.Repo, from.Pkg, importData.OriginatingRule.Name())
+		deps := make([]string, 0, len(importData.Deps))
+		for dep, _ := range importData.Deps {
+			if dep != rLabel {
+				deps = append(deps, rel(dep, from).String())
+			}
+		}
+		SetArrayAttr(r, "deps", deps)
+		return
+	}
+
 	depsCapacity := len(importData.ImportedModules) + len(importData.Deps)
 	deps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {

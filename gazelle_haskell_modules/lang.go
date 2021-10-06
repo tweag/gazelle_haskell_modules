@@ -36,18 +36,36 @@ func (*gazelleHaskellModulesLang) CheckFlags(fs *flag.FlagSet, c *config.Config)
 
 func (*gazelleHaskellModulesLang) KnownDirectives() []string {
 	return []string{
-		"cabal_extra_libraries",
-		"cabal_haskell_package_repo",
+		"haskell_modules_erase_library_boundaries",
 	}
 }
 
 type Config struct {
-	ExtraLibrariesMap  map[string]string
-	HaskellPackageRepo string
+	EraseLibraryBoundaries bool
 }
 
 func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rule.File) {
-	return
+	if f == nil {
+		return
+	}
+
+	m, ok := c.Exts[gazelleHaskellModulesName]
+	var extraConfig Config
+	if ok {
+		extraConfig = m.(Config)
+	} else {
+		extraConfig = Config{
+			EraseLibraryBoundaries:  false,
+		}
+	}
+
+	for _, directive := range f.Directives {
+		switch directive.Key {
+		case "haskell_modules_erase_library_boundaries":
+			extraConfig.EraseLibraryBoundaries = directive.Value == "true"
+		}
+	}
+	c.Exts[gazelleHaskellModulesName] = extraConfig
 }
 
 var haskellAttrInfo = rule.KindInfo{
@@ -121,10 +139,11 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 func (*gazelleHaskellModulesLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
 
 func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
+	hmc := c.Exts[gazelleHaskellModulesName].(Config)
 	if isNonHaskellModule(r.Kind()) {
-		setNonHaskellModuleDepsAttribute(c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
+		setNonHaskellModuleDepsAttribute(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
 	} else {
-		setHaskellModuleDepsAttribute(ix, r, imports.(*HModuleImportData), from)
+		setHaskellModuleDepsAttribute(&hmc, ix, r, imports.(*HModuleImportData), from)
 	}
 }
 
@@ -141,7 +160,8 @@ func (*gazelleHaskellModulesLang) GenerateRules(args language.GenerateArgs) lang
 
     setVisibilities(args.File, generateResult.Gen)
 
-	return addNonHaskellModuleRules(args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
+	c := args.Config.Exts[gazelleHaskellModulesName].(Config)
+	return addNonHaskellModuleRules(&c, args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
 }
 
 func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
