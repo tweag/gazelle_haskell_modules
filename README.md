@@ -148,6 +148,13 @@ generate `haskell_module` rules. The most important functions are:
 
 ## Limitations
 
+### Source file discovery
+
+At the moment source files need to be listed in the `srcs` attribute
+of a Haskell rule to be built. It would be possible to implement
+a mechanism to discover files automatically, say, if they are close
+enough to other files that are build by Haskell rules.
+
 ### CPP support
 
 CPP directives in source files are ignored when scanning for imports.
