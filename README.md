@@ -38,8 +38,8 @@ gazelle_haskell_modules_dependencies()
 stack_snapshot(
 	name = "stackage",
 	packages = [
-		"aeson", # keep
-		"parsec", # keep
+		"aeson",
+		"parsec",
 	],
 	# Most snapshots of your choice might do
 	snapshot = "lts-18.1",
