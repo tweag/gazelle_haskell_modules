@@ -1,6 +1,5 @@
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 
-# rule generated from package-b/package-b.cabal by gazelle_cabal
 haskell_library(
     name = "package-b",
     srcs = [
@@ -23,7 +22,6 @@ haskell_library(
     ],
 )
 
-# rule generated from package-b/package-b.cabal by gazelle_cabal
 haskell_test(
     name = "test",
     srcs = [

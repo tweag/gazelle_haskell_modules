@@ -15,3 +15,10 @@ gazelle_binary(
     name = "gazelle_binary",
     languages = DEFAULT_LANGUAGES + ["@io_tweag_gazelle_haskell_modules//gazelle_haskell_modules"],
 )
+
+ghc_plugin(
+    name = "inspection-testing-plugin",
+    module = "Test.Inspection.Plugin",
+    visibility = ["//:__subpackages__"],
+    deps = ["@stackage//:inspection-testing"],
+)

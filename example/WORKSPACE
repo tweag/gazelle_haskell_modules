@@ -48,9 +48,21 @@ gazelle_haskell_modules_dependencies()
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "tasty-discover": [
+            "lib",
+            "exe:tasty-discover",
+        ],
+    },
     packages = [
-        "aeson",  # keep
-        "parsec",  # keep
+        "aeson",
+        "base",
+        "parsec",
+        "inspection-testing",
+        "tasty",
+        "tasty-discover",
+        "tasty-hunit",
+        "void",
     ],
     snapshot = "lts-18.1",
 )

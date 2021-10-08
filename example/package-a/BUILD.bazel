@@ -1,9 +1,9 @@
 load("@rules_haskell//haskell:defs.bzl", "haskell_binary", "haskell_toolchain_library")
 
-# Testing that rules marked with "keep" aren't removed by
-# gazelle diff
-
-# keep
+# a-haskell-binary and another-haskell-binary use the same files
+#
+# We test here that different haskell_module rules are generated
+# to build the files for each binary.
 haskell_binary(
     name = "a-haskell-binary",
     srcs = [
@@ -11,8 +11,6 @@ haskell_binary(
         "app/PackageA/Other/C.hs",
     ],
     compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
-    plugins = [],
-    tools = [],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
@@ -20,13 +18,6 @@ haskell_binary(
         "@stackage//:base",
     ],
 )
-
-# Testing that non-haskell rules aren't removed by
-# gazelle diff
-haskell_toolchain_library(name = "base")
-
-# Testing that haskell rules are removed by
-# gazelle diff
 
 haskell_binary(
     name = "another-haskell-binary",
@@ -35,8 +26,6 @@ haskell_binary(
         "app/PackageA/Other/C.hs",
     ],
     compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
-    plugins = [],
-    tools = [],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
@@ -45,18 +34,31 @@ haskell_binary(
     ],
 )
 
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_binary(
-    name = "bench-b",
-    compiler_flags = [
-        "-DSOME_VALUE=1",  # keep
+haskell_library(
+    name = "package-a",
+    srcs = [
+        "src/PackageA/Exposed/A.hs",
+        "src/PackageA/Other/B.hs",
+        "src/PackageA/Other/D.lhs",
+        "src/PackageA/Other/E.hsc",
     ],
-    # base is left out of the dependencies in the cabal file but it
-    # is needed for building.
-    # We keep it here to check that we can keep dependencies.
-    #
-    # Similarly, we test "keep" in compiler_flags above, too.
+    compiler_flags = [
+        "-DVERSION_package_a=\"0.1.0.0\"",
+        "-Wall",
+        "-Werror",
+        "-Wno-orphans",
+        "-lm",
+    ],
+    hidden_modules = [
+        "PackageA.Other.B",
+        "PackageA.Other.D",
+        "PackageA.Other.E",
+    ],
+    plugins = ["//:inspection-testing-plugin"],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
     deps = [
-        "@stackage//:base",  # keep
+        "@stackage//:base",
+        "@zlib.dev//:zlib",
     ],
 )
