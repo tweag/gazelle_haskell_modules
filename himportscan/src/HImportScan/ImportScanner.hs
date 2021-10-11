@@ -14,7 +14,8 @@ module HImportScan.ImportScanner
 
 import Control.Monad (void)
 import qualified Data.Aeson as Aeson
-import Data.List (nub)
+import Data.Char (toLower)
+import Data.List (isSuffixOf, nub)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import EnumSet
@@ -49,7 +50,7 @@ instance Aeson.ToJSON ScannedImports where
 scanImports :: FilePath -> IO ScannedImports
 scanImports filePath = withFile filePath ReadMode $ \h -> do
   contents <- hGetContents h
-  let sbuffer = stringToStringBuffer (clearCPPDirectives contents)
+  let sbuffer = stringToStringBuffer (preprocessContents contents)
       loc = mkRealSrcLoc (mkFastString filePath) 1 1
   case scanTokenStream filePath $ lexTokenStream sbuffer loc of
     Left err -> error err
@@ -60,6 +61,9 @@ scanImports filePath = withFile filePath ReadMode $ \h -> do
         , importedModules
         }
 
+  where
+    preprocessContents = unlines . flipBirdTracks filePath . clearCPPDirectives . lines
+
 -- | Clear CPP directives since they would otherwise confuse the scanner.
 --
 -- Takes as inputs the contents of a Haskell source file and replaces all
@@ -67,22 +71,32 @@ scanImports filePath = withFile filePath ReadMode $ \h -> do
 --
 -- Honours multiline directives (\-terminated) too
 --
-clearCPPDirectives :: String -> String
-clearCPPDirectives = unlines . clearLines . lines
+clearCPPDirectives :: [String] -> [String]
+clearCPPDirectives = \case
+  xs@(('#' : _) : _) ->
+    let (nlines, rest) = dropDirectiveLines xs
+     in replicate nlines "" ++ clearCPPDirectives rest
+  (xs : xss) -> xs : clearCPPDirectives xss
+  [] -> []
   where
-    clearLines :: [String] -> [String]
-    clearLines xs@(('#' : _) : _) =
-      let (nlines, rest) = dropDirectiveLines xs
-       in replicate nlines "" ++ clearLines rest
-    clearLines (xs : xss) = xs : clearLines xss
-    clearLines [] = []
-
     dropDirectiveLines xs =
       let (directive, rest) = span endsWithBackslash xs
        in (length directive + 1, drop 1 rest)
 
     endsWithBackslash [] = False
     endsWithBackslash xs = last xs == '\\'
+
+-- | The start of bird tracks are replaced with spaces, and the
+-- comment lines are replaced with empty lines as long as the given
+-- file has .lhs extension.
+flipBirdTracks :: FilePath -> [String] -> [String]
+flipBirdTracks f =
+    if isSuffixOf ".lhs" (map toLower f) then map flipBirdTrack
+      else id
+  where
+    flipBirdTrack :: String -> String
+    flipBirdTrack ('>' : xs) = ' ' : xs
+    flipBirdTrack _ = " "
 
 scanTokenStream :: FilePath -> [Located Token] -> Either String (Text, [Text])
 scanTokenStream fp toks =

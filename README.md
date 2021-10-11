@@ -254,6 +254,7 @@ with `-XPackageImports`.
 - [X] See whether we can run `gazelle_haskell_modules` and `gazelle_cabal` in one pass
 - [ ] Implement tests
 - [ ] Setup CI
+- [X] Have himportscan support lhs files
 - [ ] Move the update-repos feature of gazelle\_cabal to gazelle\_haskell\_modules
 
 ## Sponsors
