@@ -126,22 +126,10 @@ func setHaskellModuleDepsAttribute(
 	importData *HModuleImportData,
 	from label.Label,
 ) {
-	if !c.EraseLibraryBoundaries {
-		rLabel := label.New(from.Repo, from.Pkg, importData.OriginatingRule.Name())
-		deps := make([]string, 0, len(importData.Deps))
-		for dep, _ := range importData.Deps {
-			if dep != rLabel {
-				deps = append(deps, rel(dep, from).String())
-			}
-		}
-		SetArrayAttr(r, "deps", deps)
-		return
-	}
-
 	depsCapacity := len(importData.ImportedModules) + len(importData.Deps)
 	deps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
-		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, from)
+		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, c.EraseLibraryBoundaries, from)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -151,9 +139,18 @@ func setHaskellModuleDepsAttribute(
 		deps = append(deps, rel(*dep, from).String())
 	}
 
-	for dep, _ := range importData.Deps {
-		if !isIndexedNonHaskellModuleRule(ix, dep) && !isIndexedHaskellModuleRule(ix, dep) {
-			deps = append(deps, rel(dep, from).String())
+	if !c.EraseLibraryBoundaries {
+		originLabel := label.New(from.Repo, from.Pkg, importData.OriginatingRule.Name())
+		for dep, _ := range importData.Deps {
+			if dep != originLabel && !isIndexedHaskellModuleRule(ix, dep) {
+				deps = append(deps, rel(dep, from).String())
+			}
+		}
+	} else {
+		for dep, _ := range importData.Deps {
+			if !isIndexedNonHaskellModuleRule(ix, dep) && !isIndexedHaskellModuleRule(ix, dep) {
+				deps = append(deps, rel(dep, from).String())
+			}
 		}
 	}
 
@@ -182,6 +179,7 @@ func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
 	mapDep map[label.Label]bool,
 	moduleName string,
+	eraseLibraryBoundaries bool,
 	from label.Label,
 ) (*label.Label, error) {
 	spec := resolve.ImportSpec{gazelleHaskellModulesName, "module_name:" + moduleName}
@@ -218,6 +216,10 @@ func findModuleLabelByModuleName(
 	}
 	if finalLabel != nil {
 		return finalLabel, nil
+	}
+
+	if !eraseLibraryBoundaries {
+		return nil, nil
 	}
 
 	if len(res) == 1 {
