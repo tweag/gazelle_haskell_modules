@@ -11,30 +11,36 @@ local_repository(
 # rules_haskell preamble
 ##########################
 
-http_archive(
+#http_archive(
+#    name = "rules_haskell",
+##    sha256 = "427f7363d4b6addafaae1a371d60da6eb0a236b6fb7884d5a087e47e92f55403",
+#    strip_prefix = "rules_haskell-ea0e70ace2432a490d4ab4c4e54617612466e584",
+#    url = "https://github.com/tweag/rules_haskell/archive/ea0e70ace2432a490d4ab4c4e54617612466e584.zip",
+#)
+
+local_repository(
     name = "rules_haskell",
-    sha256 = "427f7363d4b6addafaae1a371d60da6eb0a236b6fb7884d5a087e47e92f55403",
-    strip_prefix = "rules_haskell-f929776456ee3814991c6dcc4d67d15088cb148e",
-    url = "https://github.com/tweag/rules_haskell/archive/f929776456ee3814991c6dcc4d67d15088cb148e.zip",
+    path = "../rules_haskell",
 )
+
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_local_repository",
-    "nixpkgs_package",
-    "nixpkgs_python_configure",
-)
+#load(
+#    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+#    "nixpkgs_local_repository",
+#    "nixpkgs_package",
+#    "nixpkgs_python_configure",
+#)
 
-nixpkgs_local_repository(
-    name = "nixpkgs",
-    nix_file = "//:nixpkgs.nix",
-)
+#nixpkgs_local_repository(
+#    name = "nixpkgs",
+#    nix_file = "//:nixpkgs.nix",
+#)
 
-nixpkgs_python_configure(repository = "@nixpkgs")
+#nixpkgs_python_configure(repository = "@nixpkgs")
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
@@ -67,20 +73,23 @@ stack_snapshot(
     snapshot = "lts-18.1",
 )
 
-load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
+rules_haskell_toolchains(version = "8.10.4")
 
-haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8104",
-    compiler_flags = [
-        "-Werror",
-        "-Wall",
-        "-Wcompat",
-        "-Wincomplete-record-updates",
-        "-Wredundant-constraints",
-    ],
-    repositories = {"nixpkgs": "@nixpkgs"},
-    version = "8.10.4",
-)
+#load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
+
+#haskell_register_ghc_nixpkgs(
+#    attribute_path = "haskell.compiler.ghc8104",
+#    compiler_flags = [
+#        "-Werror",
+#        "-Wall",
+#        "-Wcompat",
+#        "-Wincomplete-record-updates",
+#        "-Wredundant-constraints",
+#    ],
+#    repositories = {"nixpkgs": "@nixpkgs"},
+#    version = "8.10.4",
+#)
 
 ###############
 # Go preamble
@@ -95,12 +104,15 @@ http_archive(
     ],
 )
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
-    "nixpkgs_go_configure",
-)
+#load(
+#    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
+#    "nixpkgs_go_configure",
+#)
+#
+#nixpkgs_go_configure(repository = "@nixpkgs")
 
-nixpkgs_go_configure(repository = "@nixpkgs")
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+go_register_toolchains(version = "1.16.5")
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies")
 
@@ -127,37 +139,37 @@ gazelle_dependencies()
 # zlib
 ####################
 
-nixpkgs_package(
-    name = "nixpkgs_zlib",
-    attribute_path = "zlib",
-    repository = "@nixpkgs",
-)
-
-nixpkgs_package(
-    name = "zlib.dev",
-    build_file_content = """
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-filegroup(
-    name = "include",
-    srcs = glob(["include/*.h"]),
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "zlib",
-    srcs = ["@nixpkgs_zlib//:lib"],
-    hdrs = [":include"],
-    strip_include_prefix = "include",
-    visibility = ["//visibility:public"],
-    # This rule only bundles headers and a library and doesn't compile or link by itself.
-    # We set linkstatic = 1 to quiet to quiet the following warning:
-    #
-    #   in linkstatic attribute of cc_library rule @zlib.dev//:zlib:
-    #   setting 'linkstatic=1' is recommended if there are no object files.
-    #
-    linkstatic = 1,
-)
-""",
-    repository = "@nixpkgs",
-)
+#nixpkgs_package(
+#    name = "nixpkgs_zlib",
+#    attribute_path = "zlib",
+#    repository = "@nixpkgs",
+#)
+#
+#nixpkgs_package(
+#    name = "zlib.dev",
+#    build_file_content = """
+#load("@rules_cc//cc:defs.bzl", "cc_library")
+#
+#filegroup(
+#    name = "include",
+#    srcs = glob(["include/*.h"]),
+#    visibility = ["//visibility:public"],
+#)
+#
+#cc_library(
+#    name = "zlib",
+#    srcs = ["@nixpkgs_zlib//:lib"],
+#    hdrs = [":include"],
+#    strip_include_prefix = "include",
+#    visibility = ["//visibility:public"],
+#    # This rule only bundles headers and a library and doesn't compile or link by itself.
+#    # We set linkstatic = 1 to quiet to quiet the following warning:
+#    #
+#    #   in linkstatic attribute of cc_library rule @zlib.dev//:zlib:
+#    #   setting 'linkstatic=1' is recommended if there are no object files.
+#    #
+#    linkstatic = 1,
+#)
+#""",
+#    repository = "@nixpkgs",
+#)

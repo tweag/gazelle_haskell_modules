@@ -4,6 +4,7 @@ load(
     "gazelle",
     "gazelle_binary",
 )
+load("@rules_haskell//haskell:defs.bzl", "ghc_plugin")
 
 gazelle(
     name = "gazelle",
