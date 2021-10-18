@@ -57,6 +57,5 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         "@stackage//:base",
-        "@zlib.dev//:zlib",
     ],
 )
