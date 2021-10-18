@@ -303,7 +303,7 @@ func depsFromRule(expr build.Expr, repo string, pkg string) (map[label.Label]boo
 
 	xs := make(map[label.Label]bool, len(deps))
 	for lbl, _ := range deps {
-		xs[lbl.Abs(repo, pkg)] = true
+		xs[abs(lbl, repo, pkg)] = true
 	}
 
 	return xs, nil

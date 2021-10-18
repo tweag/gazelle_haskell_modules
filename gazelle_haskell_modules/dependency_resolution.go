@@ -294,6 +294,21 @@ func rel(lbl label.Label, from label.Label) label.Label {
 	return lbl.Rel(from.Repo, from.Pkg)
 }
 
+// "//package".Abs(repo, pkg) leaves the label unchanged when we
+// would need "@repo//package"
+func abs(lbl label.Label, repo string, pkg string) label.Label {
+	if lbl.Repo == "" {
+		if lbl.Pkg == "" {
+			return label.New(repo, pkg, lbl.Name)
+		} else {
+			return label.New(repo, lbl.Pkg, lbl.Name)
+		}
+	} else {
+		lbl.Relative = false
+		return lbl
+	}
+}
+
 func SetArrayAttr(r *rule.Rule, attrName string, arr []string) {
     if len(arr) > 0 {
         r.SetAttr(attrName, arr)
