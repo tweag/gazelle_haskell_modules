@@ -85,10 +85,10 @@ func setNonHaskellModuleDepsAttribute(
 	for _, f := range importData.Srcs {
 		mod, err := findModuleLabelByModuleFilePath(repoRoot, ix, f, r.Name(), from)
 		if err != nil {
-			log.Fatal("On rule ", r.Name(), ": ", err)
+			log.Fatal("On rule ", label.New(from.Repo, from.Pkg, r.Name()), ": ", err)
 		}
 		if mod == nil {
-			log.Fatal("On rule ", r.Name(), ": coudn't find haskell_module rule for source ", f)
+			log.Fatal("On rule ", label.New(from.Repo, from.Pkg, r.Name()), ": coudn't find haskell_module rule for source ", f)
 		}
 		modules[*mod] = true
 	}
