@@ -87,6 +87,9 @@ func setNonHaskellModuleDepsAttribute(
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
+		if mod == nil {
+			log.Fatal("On rule ", r.Name(), ": coudn't find haskell_module rule for source ", f)
+		}
 		modules[*mod] = true
 	}
 	moduleStrings := make([]string, len(modules))
