@@ -107,12 +107,9 @@ func setNonHaskellModuleDepsAttribute(
 			deps = append(deps, rel(dep, from).String())
 		}
 	}
-	if r.Kind() == "haskell_library" {
-		SetArrayAttr(r, "deps", deps)
-		SetArrayAttr(r, "modules", moduleStrings)
-	} else {
-		SetArrayAttr(r, "deps", append(moduleStrings, deps...))
-	}
+
+	SetArrayAttr(r, "deps", deps)
+	SetArrayAttr(r, "modules", moduleStrings)
 }
 
 // Sets as deps the labels of all imported modules.
