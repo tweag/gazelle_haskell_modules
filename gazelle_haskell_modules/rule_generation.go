@@ -213,7 +213,7 @@ func addNonHaskellModuleRules(
 	haskellRules := make([]*rule.Rule, 0, len(rules))
 	imports := make([]interface{}, 0, len(rules))
 	for _, r := range rules {
-		if r.ShouldKeep() || c.EraseLibraryBoundaries && r.Kind() == "haskell_library" {
+		if r.ShouldKeep() {
 			continue
 		}
 		if isNonHaskellModule(r.Kind()) {

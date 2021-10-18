@@ -88,9 +88,7 @@ components are removed from the cabal file.
 ```
 Instructs `gazelle_haskell_modules` to eliminate dependencies on
 libraries and use instead dependencies on `haskell_module` rules.
-Only the dependencies of `haskell_binary`, `haskell_test`, and
-`haskell_module` rules are affected. In particular, `haskell_library`
-rules are unmodified. Erasing library boundaries isn't compatible
+Erasing library boundaries isn't compatible
 with source files using [PackageImports][PackageImports], and it
 wouldn't work either if the libraries are needed by other non-Haskell
 rules.
