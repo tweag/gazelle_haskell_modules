@@ -40,7 +40,6 @@ haskell_library(
         "src/PackageA/Exposed/A.hs",
         "src/PackageA/Other/B.hs",
         "src/PackageA/Other/D.lhs",
-        "src/PackageA/Other/E.hsc",
     ],
     compiler_flags = [
         "-DVERSION_package_a=\"0.1.0.0\"",
@@ -52,7 +51,6 @@ haskell_library(
     hidden_modules = [
         "PackageA.Other.B",
         "PackageA.Other.D",
-        "PackageA.Other.E",
     ],
     plugins = ["//:inspection-testing-plugin"],
     version = "0.1.0.0",
