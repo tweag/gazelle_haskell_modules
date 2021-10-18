@@ -124,7 +124,12 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	lbl := label.New(c.RepoName, f.Pkg, r.Name())
 	if isNonHaskellModule(r.Kind()) {
-		return []resolve.ImportSpec{{gazelleHaskellModulesName, "label:" + lbl.String()}}
+		// Don't index binary rules that shouldn't be modified
+		if r.ShouldKeep() && r.Kind() != "haskell_library" {
+			return []resolve.ImportSpec{}
+		} else {
+			return []resolve.ImportSpec{{gazelleHaskellModulesName, "label:" + lbl.String()}}
+		}
 	} else if r.Kind() == "haskell_module" {
 		return []resolve.ImportSpec{
 			{gazelleHaskellModulesName, "module_name:" + getModuleNameFromRule(r)},
