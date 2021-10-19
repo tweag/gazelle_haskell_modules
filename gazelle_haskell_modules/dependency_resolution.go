@@ -126,10 +126,11 @@ func setHaskellModuleDepsAttribute(
 	importData *HModuleImportData,
 	from label.Label,
 ) {
+	originalComponentName := importData.OriginatingRule.Name()
 	depsCapacity := len(importData.ImportedModules) + len(importData.Deps)
 	deps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
-		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, c.EraseLibraryBoundaries, from)
+		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, originalComponentName, c.EraseLibraryBoundaries, from)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -140,7 +141,7 @@ func setHaskellModuleDepsAttribute(
 	}
 
 	if !c.EraseLibraryBoundaries {
-		originLabel := label.New(from.Repo, from.Pkg, importData.OriginatingRule.Name())
+		originLabel := label.New(from.Repo, from.Pkg, originalComponentName)
 		for dep, _ := range importData.Deps {
 			if dep != originLabel && !isIndexedHaskellModuleRule(ix, dep) {
 				deps = append(deps, rel(dep, from).String())
@@ -165,20 +166,25 @@ func setHaskellModuleDepsAttribute(
 // 1. If mapDep contains only one dependency of the form <pkg>.<the_module_name>,
 // it is chosen.
 //
-// 2. If only one library in mapDep contains the given module,
+// 3. If importing module comes from the same component (originalComponentName)
+// as the given moduleName, the rule defining the module for the given component is
+// chosen.
+//
+// 3. If only one library in mapDep contains the given module,
 // it is chosen.
 //
-// 3. If there is only one rule defining the module in the repo,
+// 4. If there is only one rule defining the module in the repo,
 // it is chosen.
 //
-// 4. If multiple rules define the module, an error is returned.
+// 5. If multiple rules define the module, an error is returned.
 //
-// 5. If no rule defines the module, nil is returned.
+// 6. If no rule defines the module, nil is returned.
 //
 func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
 	mapDep map[label.Label]bool,
 	moduleName string,
+	originalComponentName string,
 	eraseLibraryBoundaries bool,
 	from label.Label,
 ) (*label.Label, error) {
@@ -205,12 +211,34 @@ func findModuleLabelByModuleName(
 		// See Note [haskell_module naming scheme].
 		pkgName := strings.SplitN(r.Label.Name, ".", 2)[0]
 		pkgLabel := label.New(r.Label.Repo, r.Label.Pkg, pkgName)
+		originLabel := label.New(from.Repo, from.Pkg, originalComponentName)
+		if _, ok := mapDep[pkgLabel]; ok {
+			if originLabel != pkgLabel {
+				continue
+			}
+			if finalLabel == nil {
+				lbl := rel(r.Label, from)
+				finalLabel = &lbl
+			} else {
+				return nil, fmt.Errorf("Multiple rules define %s in %v: %v %v", moduleName, originLabel, *finalLabel, r.Label)
+			}
+		}
+	}
+	if finalLabel != nil {
+		return finalLabel, nil
+	}
+
+	for _, r := range res {
+		// Here we assume <library>.<module_name> scheme for haskell_module rule names
+		// See Note [haskell_module naming scheme].
+		pkgName := strings.SplitN(r.Label.Name, ".", 2)[0]
+		pkgLabel := label.New(r.Label.Repo, r.Label.Pkg, pkgName)
 		if _, ok := mapDep[pkgLabel]; ok {
 			if finalLabel == nil {
 				lbl := rel(r.Label, from)
 				finalLabel = &lbl
 			} else {
-				return nil, fmt.Errorf("Multiple rules define %s in libraries: %v %v", moduleName, *finalLabel, r.Label)
+				return nil, fmt.Errorf("Multiple rules define %s in library dependencies: %v %v", moduleName, originalComponentName, *finalLabel, r.Label)
 			}
 		}
 	}
