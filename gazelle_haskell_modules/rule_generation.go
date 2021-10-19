@@ -43,7 +43,7 @@ func nonHaskellModuleRulesToRuleInfos(
 	reverseDeps := make(map[label.Label]*rule.Rule, 100)
 	// Analyze non-haskell_module rules
 	for _, r := range rules {
-		if !isNonHaskellModule(r.Kind()) || r.ShouldKeep() && r.Kind() != "haskell_library" {
+		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) && r.Kind() != "haskell_library" {
 			continue
 		}
 		srcs, err := srcsFromRuleExceptKeep(pkgRoot, r.Attr("srcs"))
@@ -213,7 +213,7 @@ func addNonHaskellModuleRules(
 	haskellRules := make([]*rule.Rule, 0, len(rules))
 	imports := make([]interface{}, 0, len(rules))
 	for _, r := range rules {
-		if r.ShouldKeep() {
+		if !shouldModularize(r) {
 			continue
 		}
 		if isNonHaskellModule(r.Kind()) {
@@ -468,4 +468,16 @@ func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
 	} else {
 		return ruleInfo.OriginatingRule.Name()
 	}
+}
+
+func shouldModularize(r *rule.Rule) bool {
+	if r.ShouldKeep() {
+		return false
+	}
+	for _, c := range r.Comments() {
+		if strings.Trim(c, "# ") == "gazelle_haskell_modules:keep" {
+			return false
+		}
+	}
+	return true
 }

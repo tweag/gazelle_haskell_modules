@@ -22,7 +22,7 @@ haskell_library(
     ],
 )
 
-# keep
+# gazelle_haskell_modules:keep
 haskell_test(
     name = "test",
     srcs = [

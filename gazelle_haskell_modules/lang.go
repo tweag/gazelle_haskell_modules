@@ -125,7 +125,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 	lbl := label.New(c.RepoName, f.Pkg, r.Name())
 	if isNonHaskellModule(r.Kind()) {
 		// Don't index binary rules that shouldn't be modified
-		if r.ShouldKeep() && r.Kind() != "haskell_library" {
+		if !shouldModularize(r) && r.Kind() != "haskell_library" {
 			return []resolve.ImportSpec{}
 		} else {
 			return []resolve.ImportSpec{{gazelleHaskellModulesName, "label:" + lbl.String()}}
