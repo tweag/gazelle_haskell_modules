@@ -192,7 +192,7 @@ func findModuleLabelByModuleName(
 				lbl := rel(r.Label, from)
 				finalLabel = &lbl
 			} else {
-				return nil, fmt.Errorf("Multiple rules define %s: %v %v", moduleName, *finalLabel, r.Label)
+				return nil, fmt.Errorf("Multiple rules define %s in dependencies: %v %v", moduleName, *finalLabel, r.Label)
 			}
 		}
 	}
@@ -210,7 +210,7 @@ func findModuleLabelByModuleName(
 				lbl := rel(r.Label, from)
 				finalLabel = &lbl
 			} else {
-				return nil, fmt.Errorf("Multiple rules define %s: %v %v", moduleName, *finalLabel, r.Label)
+				return nil, fmt.Errorf("Multiple rules define %s in libraries: %v %v", moduleName, *finalLabel, r.Label)
 			}
 		}
 	}
