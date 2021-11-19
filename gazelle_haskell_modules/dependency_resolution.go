@@ -113,7 +113,6 @@ func setNonHaskellModuleDepsAttribute(
 // If the origin of an imported module can't be determined, it
 // is ignored.
 func setHaskellModuleDepsAttribute(
-	c *Config,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
 	importData *HModuleImportData,
@@ -123,7 +122,7 @@ func setHaskellModuleDepsAttribute(
 	depsCapacity := len(importData.ImportedModules)
 	deps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
-		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, originalComponentName, c.EraseLibraryBoundaries, from)
+		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, originalComponentName, from)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -144,7 +143,7 @@ func setHaskellModuleDepsAttribute(
 // 1. If mapDep contains only one dependency of the form <pkg>.<the_module_name>,
 // it is chosen.
 //
-// 3. If importing module comes from the same component (originalComponentName)
+// 2. If importing module comes from the same component (originalComponentName)
 // as the given moduleName, the rule defining the module for the given component is
 // chosen.
 //
@@ -163,7 +162,6 @@ func findModuleLabelByModuleName(
 	mapDep map[label.Label]bool,
 	moduleName string,
 	originalComponentName string,
-	eraseLibraryBoundaries bool,
 	from label.Label,
 ) (*label.Label, error) {
 	spec := resolve.ImportSpec{gazelleHaskellModulesName, "module_name:" + moduleName}
@@ -224,21 +222,6 @@ func findModuleLabelByModuleName(
 		return finalLabel, nil
 	}
 
-	if !eraseLibraryBoundaries {
-		return nil, nil
-	}
-
-	if len(res) == 1 {
-		lbl := rel(res[0].Label, from)
-		return &lbl, nil
-	}
-	if len(res) > 1 {
-		labels := make([]label.Label, len(res))
-		for i, r := range res {
-			labels[i] = rel(r.Label, from)
-		}
-		return nil, fmt.Errorf("Multiple rules define %s: %v", moduleName, labels)
-	}
 	return nil, nil
 }
 

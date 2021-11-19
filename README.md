@@ -81,18 +81,6 @@ bazel run //:gazelle
 Gazelle's [fix command][fix-command] can be used to delete rules when
 components are removed from the cabal file.
 
-## Directives
-
-```python
-# gazelle:haskell_modules_erase_library_boundaries true
-```
-Instructs `gazelle_haskell_modules` to eliminate dependencies on
-libraries and use instead dependencies on `haskell_module` rules.
-Erasing library boundaries isn't compatible
-with source files using [PackageImports][PackageImports], and it
-wouldn't work either if the libraries are needed by other non-Haskell
-rules.
-
 ## Rule generation
 
 Each module listed in the `srcs` attribute of a Haskell rule originates
