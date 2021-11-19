@@ -36,12 +36,10 @@ func (*gazelleHaskellModulesLang) CheckFlags(fs *flag.FlagSet, c *config.Config)
 
 func (*gazelleHaskellModulesLang) KnownDirectives() []string {
 	return []string{
-		"haskell_modules_erase_library_boundaries",
 	}
 }
 
 type Config struct {
-	EraseLibraryBoundaries bool
 }
 
 func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rule.File) {
@@ -55,14 +53,11 @@ func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rul
 		extraConfig = m.(Config)
 	} else {
 		extraConfig = Config{
-			EraseLibraryBoundaries:  false,
 		}
 	}
 
 	for _, directive := range f.Directives {
 		switch directive.Key {
-		case "haskell_modules_erase_library_boundaries":
-			extraConfig.EraseLibraryBoundaries = directive.Value == "true"
 		}
 	}
 	c.Exts[gazelleHaskellModulesName] = extraConfig
@@ -148,7 +143,7 @@ func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleInde
 	if isNonHaskellModule(r.Kind()) {
 		setNonHaskellModuleDepsAttribute(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
 	} else {
-		setHaskellModuleDepsAttribute(&hmc, ix, r, imports.(*HModuleImportData), from)
+		setHaskellModuleDepsAttribute(ix, r, imports.(*HModuleImportData), from)
 	}
 }
 

@@ -6,8 +6,6 @@ load(
 )
 load("@rules_haskell//haskell:defs.bzl", "ghc_plugin")
 
-# gazelle:haskell_modules_erase_library_boundaries true
-
 gazelle(
     name = "gazelle",
     data = ["@io_tweag_gazelle_haskell_modules//himportscan"],
