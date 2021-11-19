@@ -61,7 +61,6 @@ load(
 
 gazelle(
 	name = "gazelle",
-	data = ["@io_tweag_gazelle_haskell_modules//himportscan"],
 	gazelle = ":gazelle_binary",
 )
 
