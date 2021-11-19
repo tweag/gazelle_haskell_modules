@@ -96,9 +96,7 @@ rules.
 ## Rule generation
 
 Each module listed in the `srcs` attribute of a Haskell rule originates
-a `haskell_module` rule with name `<pkg>.<module>`. Some attributes
-are copied from the originating rule to the `haskell_module` rule, like
-`ghcopts`, `tools`, and `extra_srcs`.
+a `haskell_module` rule with name `<pkg>.<module>`.
 
 If library boundaries are not erased, the `deps` attribute is copied from
 the originating rule as well. If library boundaries are erased, each dependency
@@ -116,13 +114,8 @@ to determine it.
 ### Dependencies of non-haskell\_module rules
 
 The `srcs` attributes of `haskell_library`, `haskell_binary`, and
-`haskell_test` are cleared. The `deps` attribute is augmented with
+`haskell_test` are cleared. The `modules` attribute is populated with
 the labels of the corresponding `haskell_module` rules.
-
-Additionally, `gazelle_haskell_modules` removes from `deps` the
-dependencies defined with other `haskell_library` rules. These
-dependencies are unnecessary because the `haskell_module` rules will
-depend on modules from them if needed.
 
 ### Updating dependencies of haskell\_module rules
 

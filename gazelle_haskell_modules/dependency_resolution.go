@@ -100,12 +100,9 @@ func setNonHaskellModuleDepsAttribute(
 	}
 	sort.Strings(moduleStrings)
 
-	// Skip dependencies defined in the same repo. Modules will depend directly on those.
 	deps := make([]string, 0, len(importData.Deps))
 	for dep, _ := range importData.Deps {
-	    if !c.EraseLibraryBoundaries || !isIndexedNonHaskellModuleRule(ix, dep) {
-			deps = append(deps, rel(dep, from).String())
-		}
+		deps = append(deps, rel(dep, from).String())
 	}
 
 	SetArrayAttr(r, "deps", deps)
@@ -115,10 +112,6 @@ func setNonHaskellModuleDepsAttribute(
 // Sets as deps the labels of all imported modules.
 // If the origin of an imported module can't be determined, it
 // is ignored.
-//
-// Dependencies of the originating haskell_library or haskell_binary
-// rule are copied, excluding those dependencies that are defined in
-// the same repo and not imported in the module source.
 func setHaskellModuleDepsAttribute(
 	c *Config,
 	ix *resolve.RuleIndex,
@@ -127,7 +120,7 @@ func setHaskellModuleDepsAttribute(
 	from label.Label,
 ) {
 	originalComponentName := importData.OriginatingRule.Name()
-	depsCapacity := len(importData.ImportedModules) + len(importData.Deps)
+	depsCapacity := len(importData.ImportedModules)
 	deps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
 		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, originalComponentName, c.EraseLibraryBoundaries, from)
@@ -138,21 +131,6 @@ func setHaskellModuleDepsAttribute(
 			continue
 		}
 		deps = append(deps, rel(*dep, from).String())
-	}
-
-	if !c.EraseLibraryBoundaries {
-		originLabel := label.New(from.Repo, from.Pkg, originalComponentName)
-		for dep, _ := range importData.Deps {
-			if dep != originLabel && !isIndexedHaskellModuleRule(ix, dep) {
-				deps = append(deps, rel(dep, from).String())
-			}
-		}
-	} else {
-		for dep, _ := range importData.Deps {
-			if !isIndexedNonHaskellModuleRule(ix, dep) && !isIndexedHaskellModuleRule(ix, dep) {
-				deps = append(deps, rel(dep, from).String())
-			}
-		}
 	}
 
 	SetArrayAttr(r, "deps", deps)
