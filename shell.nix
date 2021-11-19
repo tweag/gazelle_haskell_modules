@@ -12,6 +12,7 @@ mkShell {
     bazel_4
     binutils
     cacert
+    git
     nix
     openjdk11
     python3
