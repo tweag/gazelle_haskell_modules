@@ -448,12 +448,6 @@ func isEmptyListExpr(expr build.Expr) bool {
 	}
 }
 
-func SetArrayAttrExpr(r *rule.Rule, attrName string, expr build.Expr) {
-    if expr != nil && !isEmptyListExpr(expr) {
-        r.SetAttr(attrName, expr)
-    }
-}
-
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
 	if ruleInfo.OriginatingRule.Kind() != "haskell_module" {
 		return ruleInfo.OriginatingRule.Name() + "." + ruleInfo.ModuleData.ModuleName
