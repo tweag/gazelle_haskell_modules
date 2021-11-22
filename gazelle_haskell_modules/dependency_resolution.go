@@ -105,8 +105,8 @@ func setNonHaskellModuleDepsAttribute(
 		deps = append(deps, rel(dep, from).String())
 	}
 
-	SetArrayAttr(r, "deps", deps)
-	SetArrayAttr(r, "modules", moduleStrings)
+    r.SetAttr("deps", deps)
+    r.SetAttr("modules", moduleStrings)
 }
 
 // Sets as deps the labels of all imported modules.
@@ -132,7 +132,7 @@ func setHaskellModuleDepsAttribute(
 		deps = append(deps, rel(*dep, from).String())
 	}
 
-	SetArrayAttr(r, "deps", deps)
+    r.SetAttr("deps", deps)
 }
 
 // Yields the label of a module with the given name.
@@ -272,10 +272,4 @@ func abs(lbl label.Label, repo string, pkg string) label.Label {
 		lbl.Relative = false
 		return lbl
 	}
-}
-
-func SetArrayAttr(r *rule.Rule, attrName string, arr []string) {
-    if len(arr) > 0 {
-        r.SetAttr(attrName, arr)
-    }
 }
