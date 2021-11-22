@@ -88,7 +88,7 @@ func setNonHaskellModuleDepsAttribute(
 			log.Fatal("On rule ", label.New(from.Repo, from.Pkg, r.Name()), ": ", err)
 		}
 		if mod == nil {
-			log.Fatal("On rule ", label.New(from.Repo, from.Pkg, r.Name()), ": coudn't find haskell_module rule for source ", f)
+			log.Fatal("On rule ", label.New(from.Repo, from.Pkg, r.Name()), ": couldn't find haskell_module rule for source ", f)
 		}
 		modules[*mod] = true
 	}
