@@ -3,6 +3,7 @@ package gazelle_haskell_modules
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -117,19 +118,14 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 }
 
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
-	lbl := label.New(c.RepoName, f.Pkg, r.Name())
-	if isNonHaskellModule(r.Kind()) {
-		// Don't index binary rules that shouldn't be modified
-		if !shouldModularize(r) && r.Kind() != "haskell_library" {
+	if r.Kind() == "haskell_module" {
+		originatingRule := getOriginatingRule(r)
+		if originatingRule == nil {
 			return []resolve.ImportSpec{}
-		} else {
-			return []resolve.ImportSpec{{gazelleHaskellModulesName, "label:" + lbl.String()}}
 		}
-	} else if r.Kind() == "haskell_module" {
 		return []resolve.ImportSpec{
-			{gazelleHaskellModulesName, "module_name:" + getModuleNameFromRule(r)},
-			{gazelleHaskellModulesName, "haskell_module:" + lbl.String()},
-			{gazelleHaskellModulesName, "filepath:" + getSrcFromRule(c.RepoRoot, f.Path, r)},
+			{gazelleHaskellModulesName, fmt.Sprintf("module_name:%s:%s:%s", f.Pkg, originatingRule.Name(), getModuleNameFromRule(r))},
+			{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))},
 		}
 	} else {
 		return []resolve.ImportSpec{}
@@ -210,4 +206,12 @@ func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string 
 		log.Fatal("Reading src of " + r.Name(), err)
 	}
 	return src
+}
+
+func getOriginatingRule(r *rule.Rule) *rule.Rule {
+	v := r.PrivateAttr("originating_rule")
+	if v != nil {
+		return v.(*rule.Rule)
+	}
+	return nil
 }
