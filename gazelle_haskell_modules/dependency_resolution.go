@@ -50,7 +50,7 @@ func setNonHaskellModuleDepsAttribute(
 	}
 	sort.Strings(moduleStrings)
 
-    r.SetAttr("modules", moduleStrings)
+	r.SetAttr("modules", moduleStrings)
 }
 
 // Sets as deps the labels of all imported modules.
@@ -76,9 +76,9 @@ func setHaskellModuleDepsAttribute(
 		deps = append(deps, rel(*dep, from).String())
 	}
 
-    if len(deps) > 0 {
-        r.SetAttr("deps", deps)
-    }
+	if len(deps) > 0 {
+		r.SetAttr("deps", deps)
+	}
 }
 
 // Yields the label of a module with the given name.

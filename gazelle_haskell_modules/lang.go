@@ -154,7 +154,7 @@ func (*gazelleHaskellModulesLang) GenerateRules(args language.GenerateArgs) lang
 	ruleInfos := rulesToRuleInfos(args.Dir, args.File.Rules, args.Config.RepoName, args.File.Pkg)
 	generateResult := infoToRules(args.Dir, ruleInfos)
 
-    setVisibilities(args.File, generateResult.Gen)
+	setVisibilities(args.File, generateResult.Gen)
 
 	c := args.Config.Exts[gazelleHaskellModulesName].(Config)
 	return addNonHaskellModuleRules(&c, args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
