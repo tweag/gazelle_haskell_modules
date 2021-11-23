@@ -83,20 +83,10 @@ components are removed from the cabal file.
 ## Rule generation
 
 Each module listed in the `srcs` attribute of a Haskell rule originates
-a `haskell_module` rule with name `<pkg>.<module>`.
-
-If library boundaries are not erased, the `deps` attribute is copied from
-the originating rule as well. If library boundaries are erased, each dependency
-is considered for addition to the `deps` attribute of a `haskell_module`
-rule. If the dependency is defined in the current repository with a
-`haskell_library` rule, then the dependency is dropped since the
-`haskell_module` rule is expected to depend directly on the modules of
-that dependency if at all.
-
-If the dependency isn't defined in the same repo, or isn't defined with
-a `haskell_library` rule, then the dependency is added since the source
-module might depend on it without `gazelle_haskell_modules` being able
-to determine it.
+a `haskell_module` rule with name `<pkg>.<module>`. The dependencies
+of the `haskell_module` rule are populated with labels corresponding
+to other `haskell_module` rules originating from the same library,
+binary, or test.
 
 ### Dependencies of non-haskell\_module rules
 
@@ -110,17 +100,8 @@ When the imports in a module are changed, the corresponding
 `haskell_module` rule might need to be updated. Removed imports are
 removed from the `deps` attribute, and added imports might originate new
 dependencies. Adding an import to a module that is defined in the current
-repo, will add that module to the dependencies as long as the name of the
-module uniquely identifies a rule that defines it. If two different rules
-defined the same module name, `gazelle_haskell_modules` will produce an
-error.
-
-Note that `gazelle_haskell_modules` will always chose the right module
-when generating new `haskell_module` rules because the list of
-dependencies in the originating rule allows to determine from which
-library imports are coming from. If library boundaries are erased,
-some of these dependencies are erased later on, though, so they won't
-be available when the `haskell_module` rules need to be updated.
+repo, will add that module to the dependencies if the importer and the
+imported come from the same library, binary, or test.
 
 ## Implementation
 

@@ -100,12 +100,6 @@ func setNonHaskellModuleDepsAttribute(
 	}
 	sort.Strings(moduleStrings)
 
-	deps := make([]string, 0, len(importData.Deps))
-	for dep, _ := range importData.Deps {
-		deps = append(deps, rel(dep, from).String())
-	}
-
-    r.SetAttr("deps", deps)
     r.SetAttr("modules", moduleStrings)
 }
 
@@ -122,7 +116,7 @@ func setHaskellModuleDepsAttribute(
 	depsCapacity := len(importData.ImportedModules)
 	deps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
-		dep, err := findModuleLabelByModuleName(ix, importData.Deps, mod, originalComponentName, from)
+		dep, err := findModuleLabelByModuleName(ix, mod, originalComponentName, from)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -132,28 +126,23 @@ func setHaskellModuleDepsAttribute(
 		deps = append(deps, rel(*dep, from).String())
 	}
 
-    r.SetAttr("deps", deps)
+    if len(deps) > 0 {
+        r.SetAttr("deps", deps)
+    }
 }
 
 // Yields the label of a module with the given name.
 //
-// The label is chosen according to the first of the following
-// criteria that is met:
-//
-// 1. If mapDep contains only one dependency of the form <pkg>.<the_module_name>,
-// it is chosen.
-//
-// 2. If importing module comes from the same component (originalComponentName)
+// If the importing module comes from the same component (originalComponentName)
 // as the given moduleName, the rule defining the module for the given component is
 // chosen.
 //
-// 3. If multiple rules define the module, an error is returned.
+// If multiple rules define the module, an error is returned.
 //
-// 4. If no rule defines the module, nil is returned.
+// If no rule defines the module, nil is returned.
 //
 func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
-	mapDep map[label.Label]bool,
 	moduleName string,
 	originalComponentName string,
 	from label.Label,
@@ -162,19 +151,6 @@ func findModuleLabelByModuleName(
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var finalLabel *label.Label
-	for _, r := range res {
-		if _, ok := mapDep[r.Label]; ok {
-			if finalLabel == nil {
-				lbl := rel(r.Label, from)
-				finalLabel = &lbl
-			} else {
-				return nil, fmt.Errorf("Multiple rules define %s in dependencies: %v %v", moduleName, *finalLabel, r.Label)
-			}
-		}
-	}
-	if finalLabel != nil {
-		return finalLabel, nil
-	}
 
 	for _, r := range res {
 		// Here we assume <library>.<module_name> scheme for haskell_module rule names
@@ -182,16 +158,14 @@ func findModuleLabelByModuleName(
 		pkgName := strings.SplitN(r.Label.Name, ".", 2)[0]
 		pkgLabel := label.New(r.Label.Repo, r.Label.Pkg, pkgName)
 		originLabel := label.New(from.Repo, from.Pkg, originalComponentName)
-		if _, ok := mapDep[pkgLabel]; ok {
-			if originLabel != pkgLabel {
-				continue
-			}
-			if finalLabel == nil {
-				lbl := rel(r.Label, from)
-				finalLabel = &lbl
-			} else {
-				return nil, fmt.Errorf("Multiple rules define %s in %v: %v %v", moduleName, originLabel, *finalLabel, r.Label)
-			}
+		if originLabel != pkgLabel {
+		    continue
+		}
+		if finalLabel == nil {
+			lbl := rel(r.Label, from)
+			finalLabel = &lbl
+		} else {
+			return nil, fmt.Errorf("Multiple rules define %s in %v: %v %v", moduleName, originLabel, *finalLabel, r.Label)
 		}
 	}
 	if finalLabel != nil {

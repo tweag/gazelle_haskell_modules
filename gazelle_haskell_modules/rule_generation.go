@@ -49,14 +49,8 @@ func nonHaskellModuleRulesToRuleInfos(
 		srcs, err := srcsFromRuleExceptKeep(pkgRoot, r.Attr("srcs"))
 		handleRuleError(err, r, "srcs")
 
-		deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
-		handleRuleError(err, r, "deps")
-
 		modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
 		handleRuleError(err, r, "modules")
-
-		// Allow imports of modules on the same library, binary or test
-		deps[label.New(repo, pkg, r.Name())] = true
 
 		modDatas := haskellModulesToModuleData(srcs)
 		ruleInfos := make([]*RuleInfo, len(modDatas))
@@ -64,16 +58,12 @@ func nonHaskellModuleRulesToRuleInfos(
 			ruleInfos[i] = &RuleInfo {
 				OriginatingRule: r,
 				ModuleData: modData,
-				Deps: deps,
 				Modules: modules,
 			}
 		}
 		ruleInfoss = append(ruleInfoss, ruleInfos)
 
 		for dep, _ := range modules {
-			reverseDeps[dep] = r
-		}
-		for dep, _ := range deps {
 			reverseDeps[dep] = r
 		}
 	}
@@ -107,29 +97,10 @@ func haskellModuleRulesToRuleInfos(
 			originatingRule = r
 		}
 
-		deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
-		handleRuleError(err, r, "deps")
-
-		if originatingRule != r {
-			// In contrast to non haskell_module rules, take into acount
-			// the dependencies coming both from the originating and the
-			// existing rule.
-			depsOrigin, err := depsFromRule(originatingRule.Attr("deps"), repo, pkg)
-			handleRuleError(err, originatingRule, "deps")
-
-			// Allow imports of modules on the same library, binary or test
-			deps[label.New(repo, pkg, originatingRule.Name())] = true
-
-			for k, v := range depsOrigin {
-				deps[k] = v
-			}
-		}
-
 		modDatas := haskellModulesToModuleData([]string{src})
 		ruleInfo := RuleInfo {
 			OriginatingRule: originatingRule,
 			ModuleData: modDatas[0],
-			Deps: deps,
 			Modules: map[label.Label]bool{},
 		}
 
@@ -183,7 +154,6 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 		theRules[i] = r
 		theImports[i] = &HModuleImportData {
 			OriginatingRule: ruleInfo.OriginatingRule,
-			Deps: ruleInfo.Deps,
 			ImportedModules: ruleInfo.ModuleData.ImportedModules,
 		}
 	}
@@ -212,19 +182,16 @@ func addNonHaskellModuleRules(
 			newr := rule.NewRule(r.Kind(), r.Name())
 			for _, k := range r.AttrKeys() {
 				// Empty lists in attributes crash gazelle, so we remove them here.
-				if k != "srcs" && k != "deps" && k != "modules" && !isEmptyListExpr(r.Attr(k)) {
+				if k != "srcs" && k != "modules" && !isEmptyListExpr(r.Attr(k)) {
 					newr.SetAttr(k, r.Attr(k))
 				}
 			}
 
 			srcs, err := srcsFromRuleExceptKeep(pkgRoot, r.Attr("srcs"))
 			handleRuleError(err, r, "srcs")
-			deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
-			handleRuleError(err, r, "deps")
 			modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
 			handleRuleError(err, r, "modules")
 			imports = append(imports, &HRuleImportData {
-				Deps: deps,
 				Modules: modules,
 				Srcs: srcs,
 			})
@@ -317,19 +284,16 @@ type ModuleData struct {
 
 type RuleInfo struct {
 	OriginatingRule *rule.Rule
-	Deps map[label.Label]bool // Absolute labels of the dependencies
 	Modules map[label.Label]bool // Absolute labels of the modules in the library, empty if not a library
 	ModuleData *ModuleData
 }
 
 type HModuleImportData struct {
 	OriginatingRule *rule.Rule
-	Deps map[label.Label]bool // Absolute labels of the dependencies
 	ImportedModules []string
 }
 
 type HRuleImportData struct {
-	Deps map[label.Label]bool // Absolute labels of the dependencies
 	Modules map[label.Label]bool // Absolute labels of the modules in the library, empty if not a library
 	Srcs []string
 }
