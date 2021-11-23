@@ -24,8 +24,8 @@ import (
 // private attributes as a side effect!
 // They are needed when indexing the rule.
 func rulesToRuleInfos(pkgRoot string, rules []*rule.Rule, repo string, pkg string) []*RuleInfo {
-	ruleInfoss0, reverseDeps := nonHaskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg)
-	ruleInfoss1 := haskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg, reverseDeps)
+	ruleInfoss0, originatingRules := nonHaskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg)
+	ruleInfoss1 := haskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg, originatingRules)
 	return concatRuleInfos(append(ruleInfoss0, ruleInfoss1...))
 }
 
@@ -40,7 +40,7 @@ func nonHaskellModuleRulesToRuleInfos(
 	pkg string,
 ) ([][]*RuleInfo, map[label.Label]*rule.Rule) {
 	ruleInfoss := make([][]*RuleInfo, 0, 100)
-	reverseDeps := make(map[label.Label]*rule.Rule, 100)
+	originatingRules := make(map[label.Label]*rule.Rule, 100)
 	// Analyze non-haskell_module rules
 	for _, r := range rules {
 		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) {
@@ -64,21 +64,21 @@ func nonHaskellModuleRulesToRuleInfos(
 		ruleInfoss = append(ruleInfoss, ruleInfos)
 
 		for dep, _ := range modules {
-			reverseDeps[dep] = r
+			originatingRules[dep] = r
 		}
 	}
-	return ruleInfoss, reverseDeps
+	return ruleInfoss, originatingRules
 }
 
-// reverseDeps is used to determine which rule is originating a haskell_module
-// rule, which is used in turn to determine from which rule the `haskell_module`
-// rule should "inherit" attributes.
+// originatingRules is used to determine which rule is originating a haskell_module
+// rule, which is used in turn to determine which modules from the same originating
+// rule are meant in imports.
 func haskellModuleRulesToRuleInfos(
 	pkgRoot string,
 	rules []*rule.Rule,
 	repo string,
 	pkg string,
-    reverseDeps map[label.Label]*rule.Rule,
+    originatingRules map[label.Label]*rule.Rule,
 ) [][]*RuleInfo {
 	ruleInfoss := make([][]*RuleInfo, 0, 100)
 	// Analyze haskell_module rules
@@ -90,7 +90,7 @@ func haskellModuleRulesToRuleInfos(
 		src := path.Join(pkgRoot, r.AttrString("src"))
 
 		rLabel := label.New(repo, pkg, r.Name())
-		originatingRule, ok := reverseDeps[rLabel]
+		originatingRule, ok := originatingRules[rLabel]
 		if !ok {
 			continue
 		}
