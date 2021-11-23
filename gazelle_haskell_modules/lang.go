@@ -68,14 +68,8 @@ var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"compiler_flags": true,
-		"ghcopts":        true,
-		"data":           true,
-		"deps":           true,
-		"plugins":        true,
+		"modules":        true,
 		"srcs":           true,
-		"tools":          true,
-		"version":        true,
 	},
 }
 
@@ -83,13 +77,7 @@ var haskellModuleAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"ghcopts":          true,
-		"data":             true,
 		"deps":             true,
-		"plugins":          true,
-		"src":              true,
-		"src_strip_prefix": true,
-		"tools":            true,
 	},
 }
 
