@@ -125,9 +125,9 @@ func (*gazelleHaskellModulesLang) Embeds(r *rule.Rule, from label.Label) []label
 func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
 	hmc := c.Exts[gazelleHaskellModulesName].(Config)
 	if isNonHaskellModule(r.Kind()) {
-		setNonHaskellModuleDepsAttribute(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
+		setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
 	} else {
-		setHaskellModuleDepsAttribute(ix, r, imports.(*HModuleImportData), from)
+		setHaskellModuleDeps(ix, r, imports.(*HModuleImportData), from)
 	}
 }
 

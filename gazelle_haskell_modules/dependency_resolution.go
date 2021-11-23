@@ -23,7 +23,7 @@ import (
 //
 // Adds to the modules attribute the labels of all haskell_module
 // rules originated from this rule.
-func setNonHaskellModuleDepsAttribute(
+func setNonHaskellModuleDeps(
 	c *Config,
 	repoRoot string,
 	ix *resolve.RuleIndex,
@@ -56,7 +56,7 @@ func setNonHaskellModuleDepsAttribute(
 // Sets as deps the labels of all imported modules.
 // If the origin of an imported module can't be determined, it
 // is ignored.
-func setHaskellModuleDepsAttribute(
+func setHaskellModuleDeps(
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
 	importData *HModuleImportData,
