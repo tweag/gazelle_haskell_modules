@@ -192,10 +192,6 @@ haskell_test(
 
 In the above case, the rule won't originate any `haskell_module` rules.
 
-At the moment, this only works on `haskell_binary` and `haskell_test` rules.
-If used in a `haskell_library`, rules for modules in other targets that
-import the preprocessed source files would miss them in the dependencies.
-
 ### export and reexported\_modules
 
 `haskell_library` has attributes `export` and `reexported_modules` which

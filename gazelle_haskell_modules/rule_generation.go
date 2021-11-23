@@ -43,7 +43,7 @@ func nonHaskellModuleRulesToRuleInfos(
 	reverseDeps := make(map[label.Label]*rule.Rule, 100)
 	// Analyze non-haskell_module rules
 	for _, r := range rules {
-		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) && r.Kind() != "haskell_library" {
+		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) {
 			continue
 		}
 		srcs, err := srcsFromRuleExceptKeep(pkgRoot, r.Attr("srcs"))
