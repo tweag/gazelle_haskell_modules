@@ -103,6 +103,9 @@ dependencies. Adding an import to a module that is defined in the current
 repo, will add that module to the dependencies if the importer and the
 imported come from the same library, binary, or test.
 
+If the origin of a `haskell_module` rule can't be determined, i.e. no
+library, binary, or test mentions the module, then it won't be updated.
+
 ## Implementation
 
 `gazelle_haskell_modules` extracts module imports from Haskell modules

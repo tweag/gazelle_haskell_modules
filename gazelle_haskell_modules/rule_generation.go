@@ -89,12 +89,10 @@ func haskellModuleRulesToRuleInfos(
 
 		src := path.Join(pkgRoot, r.AttrString("src"))
 
-		var originatingRule *rule.Rule
 		rLabel := label.New(repo, pkg, r.Name())
-		if v, ok := reverseDeps[rLabel]; ok {
-			originatingRule = v
-		} else {
-			originatingRule = r
+		originatingRule, ok := reverseDeps[rLabel]
+		if !ok {
+			continue
 		}
 
 		modDatas := haskellModulesToModuleData([]string{src})
