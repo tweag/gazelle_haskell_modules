@@ -13,16 +13,6 @@ http_archive(
     urls = ["https://github.com/tweag/rules_haskell/archive/7a2cdc17fc6b3401b168e33760d4d52d2c33a105.zip"],
 )
 
-# build_bazel_rules_nodejs is only needed when using bazelisk due
-# to a rules_haskell issue: https://github.com/tweag/rules_haskell/issues/1635
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-maybe(
-    http_archive,
-    name = "build_bazel_rules_nodejs",
-    sha256 = "0fa2d443571c9e02fcb7363a74ae591bdcce2dd76af8677a95965edf329d778a",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.6.0/rules_nodejs-3.6.0.tar.gz"],
-)
-
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()

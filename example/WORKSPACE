@@ -20,31 +20,21 @@ http_archive(
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
-# build_bazel_rules_nodejs is only needed when using bazelisk due
-# to a rules_haskell issue: https://github.com/tweag/rules_haskell/issues/1635
-load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-maybe(
-    http_archive,
-    name = "build_bazel_rules_nodejs",
-    sha256 = "0fa2d443571c9e02fcb7363a74ae591bdcce2dd76af8677a95965edf329d778a",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/3.6.0/rules_nodejs-3.6.0.tar.gz"],
-)
-
 rules_haskell_dependencies()
 
-#load(
-#    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-#    "nixpkgs_local_repository",
-#    "nixpkgs_package",
-#    "nixpkgs_python_configure",
-#)
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_local_repository",
+    "nixpkgs_package",
+    "nixpkgs_python_configure",
+)
 
-#nixpkgs_local_repository(
-#    name = "nixpkgs",
-#    nix_file = "//:nixpkgs.nix",
-#)
+nixpkgs_local_repository(
+    name = "nixpkgs",
+    nix_file = "//:nixpkgs.nix",
+)
 
-#nixpkgs_python_configure(repository = "@nixpkgs")
+nixpkgs_python_configure(repository = "@nixpkgs")
 
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
@@ -77,23 +67,20 @@ stack_snapshot(
     snapshot = "lts-18.1",
 )
 
-load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
-rules_haskell_toolchains(version = "8.10.4")
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
-#load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
-
-#haskell_register_ghc_nixpkgs(
-#    attribute_path = "haskell.compiler.ghc8104",
-#    compiler_flags = [
-#        "-Werror",
-#        "-Wall",
-#        "-Wcompat",
-#        "-Wincomplete-record-updates",
-#        "-Wredundant-constraints",
-#    ],
-#    repositories = {"nixpkgs": "@nixpkgs"},
-#    version = "8.10.4",
-#)
+haskell_register_ghc_nixpkgs(
+    attribute_path = "haskell.compiler.ghc8107",
+    compiler_flags = [
+        "-Werror",
+        "-Wall",
+        "-Wcompat",
+        "-Wincomplete-record-updates",
+        "-Wredundant-constraints",
+    ],
+    repositories = {"nixpkgs": "@nixpkgs"},
+    version = "8.10.7",
+)
 
 ###############
 # Go preamble
@@ -108,15 +95,12 @@ http_archive(
     ],
 )
 
-#load(
-#    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
-#    "nixpkgs_go_configure",
-#)
-#
-#nixpkgs_go_configure(repository = "@nixpkgs")
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
+    "nixpkgs_go_configure",
+)
 
-load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
-go_register_toolchains(version = "1.17.2")
+nixpkgs_go_configure(repository = "@nixpkgs")
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies")
 
