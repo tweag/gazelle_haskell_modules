@@ -111,6 +111,7 @@ scanTokenStream fp toks =
     Right a -> Right a
   where
     parser = do
+      skipMany comment
       modName <- parseModuleHeader <|> return "Main"
       _ <- optional $ satisfy "virtual brace" $ \case ITvocurly -> Just (); _ -> Nothing
       imports <- many parseImport
@@ -157,7 +158,16 @@ scanTokenStream fp toks =
         skipMany $ satisfy "not ( or )" $ \case IToparen -> Nothing; ITcparen -> Nothing; _ -> Just ()
       void $ satisfy ")" $ \case ITcparen -> Just (); _ -> Nothing
 
-    satisfy lbl f = token (show . unLoc) locToSourcePos (f . unLoc) <?> lbl
+    satisfy lbl f = satisfyEvenComments lbl f <* skipMany comment
+
+    satisfyEvenComments lbl f =
+      token (show . unLoc) locToSourcePos (f . unLoc) <?> lbl
+
+    comment :: Parsec [Located Token] () String
+    comment = satisfyEvenComments "comment" $ \case
+      ITblockComment c -> Just c
+      ITlineComment c -> Just c
+      _ -> Nothing
 
     locToSourcePos :: Located a -> SourcePos
     locToSourcePos loc =
@@ -177,7 +187,7 @@ lexTokenStream buf loc =
         (error "lexTokenStreamUnitId")
         False
         False
-        False
+        True
         True
       initState = mkPStatePure parserFlags buf loc
    in go initState
