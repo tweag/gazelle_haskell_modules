@@ -4,6 +4,7 @@ package gazelle_haskell_modules
 import (
 	"fmt"
 
+	//"github.com/bazelbuild/buildtools/build"
 	//"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
 	//"github.com/bazelbuild/bazel-gazelle/language"
@@ -98,12 +99,24 @@ func setHaskellModuleDeps(
 		}
 	}
 
+	if importData.UsesTH || optionsEnableTH(r.AttrStrings("ghcopts")) {
+		r.SetAttr("enable_th", true)
+	}
 	if len(deps) > 0 {
 		r.SetAttr("deps", deps)
 	}
 	if len(crossLibraryDeps) > 0 {
 		r.SetAttr("cross_library_deps", crossLibraryDeps)
 	}
+}
+
+func optionsEnableTH(opts []string) bool {
+	for _, o := range opts {
+		if o == "-XTemplateHaskell" || o == "-XQuasiQuotes" {
+			return true
+		}
+	}
+	return false
 }
 
 // Yields the label of a module with the given name.

@@ -81,6 +81,7 @@ var haskellModuleAttrInfo = rule.KindInfo{
 	ResolveAttrs: map[string]bool{
 		"deps":               true,
 		"cross_library_deps": true,
+		"enable_th":          true,
 	},
 }
 
