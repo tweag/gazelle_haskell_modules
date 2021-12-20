@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -54,7 +55,7 @@ scanImports filePath = withFile filePath ReadMode $ \h -> do
       loc = mkRealSrcLoc (mkFastString filePath) 1 1
   case scanTokenStream filePath $ lexTokenStream sbuffer loc of
     Left err -> error err
-    Right (moduleName, importedModules) ->
+    Right ScannedData{moduleName, importedModules} ->
       return ScannedImports
         { filePath = Text.pack filePath
         , moduleName
@@ -98,7 +99,12 @@ flipBirdTracks f =
     flipBirdTrack ('>' : xs) = ' ' : xs
     flipBirdTrack _ = " "
 
-scanTokenStream :: FilePath -> [Located Token] -> Either String (Text, [Text])
+data ScannedData = ScannedData
+    { moduleName :: Text
+    , importedModules :: [Text]
+    }
+
+scanTokenStream :: FilePath -> [Located Token] -> Either String ScannedData
 scanTokenStream fp toks =
   case parse parser fp toks of
     Left e -> Left (show e)
@@ -108,7 +114,10 @@ scanTokenStream fp toks =
       modName <- parseModuleHeader <|> return "Main"
       _ <- optional $ satisfy "virtual brace" $ \case ITvocurly -> Just (); _ -> Nothing
       imports <- many parseImport
-      return (modName, nub imports)
+      return ScannedData
+        { moduleName = modName
+        , importedModules = nub imports
+        }
 
     parseModuleHeader = do
       _ <- satisfy "module" $ \case
