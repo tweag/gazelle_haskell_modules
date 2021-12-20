@@ -74,7 +74,7 @@ stack_snapshot(
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8104",
+    attribute_path = "haskell.compiler.ghc8107",
     compiler_flags = [
         "-Werror",
         "-Wall",
@@ -83,7 +83,7 @@ haskell_register_ghc_nixpkgs(
         "-Wredundant-constraints",
     ],
     repositories = {"nixpkgs": "@nixpkgs"},
-    version = "8.10.4",
+    version = "8.10.7",
 )
 
 ###############
