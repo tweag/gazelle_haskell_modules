@@ -69,6 +69,8 @@ var haskellAttrInfo = rule.KindInfo{
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
 		"modules":        true,
+		"deps":           true,
+		"narrowed_deps":  true,
 		"srcs":           true,
 	},
 }
@@ -77,7 +79,8 @@ var haskellModuleAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"deps":             true,
+		"deps":               true,
+		"cross_library_deps": true,
 	},
 }
 

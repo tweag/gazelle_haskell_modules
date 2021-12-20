@@ -196,14 +196,18 @@ func addNonHaskellModuleRules(
 			handleRuleError(err, r, "srcs")
 			modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
 			handleRuleError(err, r, "modules")
+			deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
+			handleRuleError(err, r, "deps")
+			narrowedDeps, err := depsFromRule(r.Attr("narrowed_deps"), repo, pkg)
+			handleRuleError(err, r, "narrowed_deps")
+			appendLabelMaps(deps, narrowedDeps)
 			imports = append(imports, &HRuleImportData {
+				Deps: deps,
 				Modules: modules,
 				Srcs: srcs,
 			})
 			haskellRules = append(haskellRules, newr)
 
-			deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
-			handleRuleError(err, r, "deps")
 			r.SetPrivateAttr("library_dep_labels", deps)
 			newr.SetPrivateAttr("library_dep_labels", deps)
 			newr.SetPrivateAttr("module_labels", r.PrivateAttr("module_labels"))
@@ -212,6 +216,12 @@ func addNonHaskellModuleRules(
 	return language.GenerateResult{
 		Gen:     append(gen.Gen, haskellRules...),
 		Imports: append(gen.Imports, imports...),
+	}
+}
+
+func appendLabelMaps(a map[label.Label]bool, b map[label.Label]bool) {
+	for k, v := range b {
+		a[k] = v
 	}
 }
 
@@ -305,6 +315,7 @@ type HModuleImportData struct {
 }
 
 type HRuleImportData struct {
+	Deps map[label.Label]bool // Absolute labels of deps of the library/binary/test
 	Modules map[label.Label]bool // Absolute labels of the modules in the library, empty if not a library
 	Srcs []string
 }
