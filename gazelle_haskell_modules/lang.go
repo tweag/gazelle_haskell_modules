@@ -115,6 +115,31 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			{gazelleHaskellModulesName, fmt.Sprintf("module_name:%s:%s:%s", f.Pkg, originatingRule.Name(), getModuleNameFromRule(r))},
 			{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))},
 		}
+	} else if isNonHaskellModule(r.Kind()) {
+		modules := r.PrivateAttr("module_labels")
+		moduleLabels := map[label.Label]bool{}
+		if modules != nil {
+			moduleLabels = modules.(map[label.Label]bool)
+		}
+		libraryDeps := r.PrivateAttr("library_dep_labels")
+		libraryDepLabels := map[label.Label]bool{}
+		if libraryDeps != nil {
+			libraryDepLabels = libraryDeps.(map[label.Label]bool)
+		}
+
+		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels) + len(libraryDepLabels) + 1)
+		i := 0
+		for moduleLabel := range moduleLabels {
+			moduleSpecs[i] = libraryOfModuleSpec(moduleLabel)
+			i++
+		}
+		i = 0
+		for libLabel := range libraryDepLabels {
+			moduleSpecs[len(moduleLabels) + i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
+			i++
+		}
+		moduleSpecs[len(moduleSpecs) - 1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
+		return moduleSpecs
 	} else {
 		return []resolve.ImportSpec{}
 	}

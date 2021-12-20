@@ -54,18 +54,23 @@ func nonHaskellModuleRulesToRuleInfos(
 
 		modDatas := haskellModulesToModuleData(srcs)
 		ruleInfos := make([]*RuleInfo, len(modDatas))
+		moduleLabels := make(map[label.Label]bool, len(modules) + len(srcs))
 		for i, modData := range modDatas {
 			ruleInfos[i] = &RuleInfo {
 				OriginatingRule: r,
 				ModuleData: modData,
 				Modules: modules,
 			}
+			moduleLabels[label.New(repo, pkg, ruleNameFromRuleInfo(ruleInfos[i]))] = true
 		}
 		ruleInfoss = append(ruleInfoss, ruleInfos)
 
-		for dep, _ := range modules {
-			originatingRules[dep] = r
+		for mod, _ := range modules {
+			originatingRules[mod] = r
+			moduleLabels[mod] = true
 		}
+
+		r.SetPrivateAttr("module_labels", moduleLabels)
 	}
 	return ruleInfoss, originatingRules
 }
@@ -196,6 +201,12 @@ func addNonHaskellModuleRules(
 				Srcs: srcs,
 			})
 			haskellRules = append(haskellRules, newr)
+
+			deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
+			handleRuleError(err, r, "deps")
+			r.SetPrivateAttr("library_dep_labels", deps)
+			newr.SetPrivateAttr("library_dep_labels", deps)
+			newr.SetPrivateAttr("module_labels", r.PrivateAttr("module_labels"))
 		}
 	}
 	return language.GenerateResult{

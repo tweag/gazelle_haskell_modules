@@ -145,6 +145,50 @@ func findModuleLabelByModuleFilePath(
 	}
 }
 
+func doesLibraryUseModules(ix *resolve.RuleIndex, libraryLabel label.Label) bool {
+	spec := libraryUsesModulesSpec(libraryLabel)
+	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
+
+	return len(res) > 0
+}
+
+func libraryUsesModulesSpec(libLabel label.Label) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("library_uses_modules:%s", libLabel.String()),
+	}
+}
+
+func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("library_of_module:%s", moduleLabel.String()),
+	}
+}
+
+func isDepOfAnyLibrary(ix *resolve.RuleIndex, depLabels []label.Label, libs []label.Label) (*label.Label, *label.Label) {
+
+	for _, depLabel := range depLabels {
+		for _, lib := range libs {
+			spec := isDepOfLibrarySpec(depLabel, lib.Pkg, lib.Name)
+			res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
+
+			if len(res) > 0 {
+				return &depLabel, &lib
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+func isDepOfLibrarySpec(dep label.Label, pkg string, libName string) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("is_dep_of:%s:%s:%s", dep.String(), pkg, libName),
+	}
+}
+
 func rel(lbl label.Label, from label.Label) label.Label {
 	return lbl.Rel(from.Repo, from.Pkg)
 }
