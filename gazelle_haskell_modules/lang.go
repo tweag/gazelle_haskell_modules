@@ -116,7 +116,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			return []resolve.ImportSpec{}
 		}
 		return []resolve.ImportSpec{
-			{gazelleHaskellModulesName, fmt.Sprintf("module_name:%s:%s:%s", f.Pkg, originatingRule.Name(), getModuleNameFromRule(r))},
+			moduleByNameSpec(getModuleNameFromRule(r)),
 			{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))},
 		}
 	} else if isNonHaskellModule(r.Kind()) {

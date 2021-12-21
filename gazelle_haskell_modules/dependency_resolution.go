@@ -142,7 +142,7 @@ func findModuleLabelByModuleName(
 	originalLibs []label.Label,
 	from label.Label,
 ) (*label.Label, error) {
-	spec := resolve.ImportSpec{gazelleHaskellModulesName, fmt.Sprintf("module_name:%s:%s:%s", from.Pkg, originalComponentName, moduleName)}
+	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel *label.Label
@@ -166,7 +166,7 @@ func findCrossLibraryModuleLabelByModuleName(
 	originalLibs []label.Label,
 	from label.Label,
 ) (*label.Label, error) {
-	spec := resolve.ImportSpec{gazelleHaskellModulesName, fmt.Sprintf("module_name:%s:%s:%s", from.Pkg, originalComponentName, moduleName)}
+	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel *label.Label
@@ -271,6 +271,13 @@ func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
 	return resolve.ImportSpec {
 		gazelleHaskellModulesName,
 		fmt.Sprintf("library_of_module:%s", moduleLabel.String()),
+	}
+}
+
+func moduleByNameSpec(moduleName string) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("module_name:%s", moduleName),
 	}
 }
 
