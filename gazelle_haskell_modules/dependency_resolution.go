@@ -61,9 +61,15 @@ func setNonHaskellModuleDeps(
 		}
 	}
 
-	r.SetAttr("deps", depStrings)
-	r.SetAttr("narrowed_deps", narrowedDepStrings)
-	r.SetAttr("modules", moduleStrings)
+	if len(depStrings) > 0 {
+		r.SetAttr("deps", depStrings)
+	}
+	if len(narrowedDepStrings) > 0 {
+		r.SetAttr("narrowed_deps", narrowedDepStrings)
+	}
+	if len(moduleStrings) > 0 {
+		r.SetAttr("modules", moduleStrings)
+	}
 }
 
 // Sets as deps the labels of all imported modules.
