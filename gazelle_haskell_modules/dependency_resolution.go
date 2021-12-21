@@ -82,12 +82,11 @@ func setHaskellModuleDeps(
 	from label.Label,
 ) {
 	originalLibs := librariesOfModule(ix, label.New(from.Repo, from.Pkg, r.Name()))
-	originalComponentName := importData.OriginatingRule.Name()
 	depsCapacity := len(importData.ImportedModules)
 	deps := make([]string, 0, depsCapacity)
 	crossLibraryDeps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
-		dep, err := findModuleLabelByModuleName(ix, mod, originalComponentName, originalLibs, from)
+		dep, err := findModuleLabelByModuleName(ix, mod, originalLibs)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -96,7 +95,7 @@ func setHaskellModuleDeps(
 			continue
 		}
 		
-		dep, err = findCrossLibraryModuleLabelByModuleName(ix, mod, originalComponentName, originalLibs, from)
+		dep, err = findCrossLibraryModuleLabelByModuleName(ix, mod, originalLibs)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -138,9 +137,7 @@ func optionsEnableTH(opts []string) bool {
 func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
 	moduleName string,
-	originalComponentName string,
 	originalLibs []label.Label,
-	from label.Label,
 ) (*label.Label, error) {
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
@@ -166,9 +163,7 @@ func findModuleLabelByModuleName(
 func findCrossLibraryModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
 	moduleName string,
-	originalComponentName string,
 	originalLibs []label.Label,
-	from label.Label,
 ) (*label.Label, error) {
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)

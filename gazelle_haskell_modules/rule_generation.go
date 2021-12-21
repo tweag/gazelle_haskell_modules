@@ -161,7 +161,6 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 
 		theRules[i] = r
 		theImports[i] = &HModuleImportData {
-			OriginatingRule: ruleInfo.OriginatingRule,
 			ImportedModules: ruleInfo.ModuleData.ImportedModules,
 			UsesTH: ruleInfo.ModuleData.UsesTH,
 		}
@@ -314,7 +313,6 @@ type RuleInfo struct {
 }
 
 type HModuleImportData struct {
-	OriginatingRule *rule.Rule
 	ImportedModules []string
 	UsesTH bool
 }
