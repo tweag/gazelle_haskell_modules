@@ -24,6 +24,10 @@ import (
 //
 // Adds to the modules attribute the labels of all haskell_module
 // rules originated from this rule.
+//
+// Also splits deps into deps and narrowed_deps. Any dependency
+// from deps that uses the modules attribute is moved to narrowed_deps.
+//
 func setNonHaskellModuleDeps(
 	c *Config,
 	repoRoot string,
@@ -124,27 +128,24 @@ func optionsEnableTH(opts []string) bool {
 	return false
 }
 
-// Yields the label of a module with the given name.
+// Yields the label of a haskell_module rule for a module with the
+// given name coming from any library in libs.
 //
-// If the importing module comes from the same component (originalComponentName)
-// as the given moduleName, the rule defining the module for the given component is
-// chosen.
-//
-// If multiple rules define the module, an error is returned.
+// If multiple such rules define the module, an error is returned.
 //
 // If no rule defines the module, nil is returned.
 //
 func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
 	moduleName string,
-	originalLibs []label.Label,
+	libs []label.Label,
 ) (*label.Label, error) {
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
 	for _, r := range res {
-		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), originalLibs)
+		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
 		if len(intersection) > 0 {
 			if foundLabel.Name != "" {
 				return nil, fmt.Errorf("Multiple rules define %q in %v: %v and %v", moduleName, intersection, foundLabel, r.Label)
@@ -160,10 +161,18 @@ func findModuleLabelByModuleName(
 	}
 }
 
+// Yields the label of a haskell_module rule for a module with the
+// given name coming from some library that is a dependency of a
+// library in libs.
+//
+// If multiple such rules define the module, an error is returned.
+//
+// If no rule defines the module, nil is returned.
+//
 func findCrossLibraryModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
 	moduleName string,
-	originalLibs []label.Label,
+	libs []label.Label,
 ) (*label.Label, error) {
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
@@ -172,7 +181,7 @@ func findCrossLibraryModuleLabelByModuleName(
 	var foundNarrowedLibLabel label.Label
 	var foundOriginalLibLabel label.Label
 	for _, r := range res {
-		narrowedLib, originalLib := isDepOfAnyLibrary(ix, librariesOfModule(ix, r.Label), originalLibs)
+		narrowedLib, originalLib := isDepOfAnyLibrary(ix, librariesOfModule(ix, r.Label), libs)
 		if narrowedLib != nil {
 			if foundLabel.Name != "" {
 				lbls := make([]label.Label, len(res))

@@ -20,9 +20,8 @@ import (
 // Extracts the source files from Haskell rules and creates
 // haskell_module rules to build them.
 //
-// For existing haskell_module rules, it sets the indexing_mod_name and originating_rule
-// private attributes as a side effect!
-// They are needed when indexing the rule.
+// For existing haskell_module rules, it also sets some private attributes as a side effect
+// which are needed when indexing the rule.
 func rulesToRuleInfos(pkgRoot string, rules []*rule.Rule, repo string, pkg string) []*RuleInfo {
 	ruleInfoss0, originatingRules := nonHaskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg)
 	ruleInfoss1 := haskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg, originatingRules)
@@ -34,9 +33,9 @@ const PRIVATE_ATTR_DEP_LABELS = "dep_labels"
 const PRIVATE_ATTR_MODULE_NAME = "module_name"
 const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
 
-// Yields the rule infos and a map of dependency labels to the rule that
-// has that dependency. If multiple rules have the same dependency only one
-// of them ends up in the entry of the dependency.
+// Yields the rule infos and a map of module labels to the rule that
+// has that module dependency. If multiple rules have the same module only one
+// of them ends up in the entry of the module.
 //
 func nonHaskellModuleRulesToRuleInfos(
 	pkgRoot string,
