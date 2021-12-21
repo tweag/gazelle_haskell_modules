@@ -29,6 +29,11 @@ func rulesToRuleInfos(pkgRoot string, rules []*rule.Rule, repo string, pkg strin
 	return concatRuleInfos(append(ruleInfoss0, ruleInfoss1...))
 }
 
+const PRIVATE_ATTR_MODULE_LABELS = "module_labels"
+const PRIVATE_ATTR_DEP_LABELS = "dep_labels"
+const PRIVATE_ATTR_MODULE_NAME = "module_name"
+const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
+
 // Yields the rule infos and a map of dependency labels to the rule that
 // has that dependency. If multiple rules have the same dependency only one
 // of them ends up in the entry of the dependency.
@@ -69,7 +74,7 @@ func nonHaskellModuleRulesToRuleInfos(
 			moduleLabels[mod] = true
 		}
 
-		r.SetPrivateAttr("module_labels", moduleLabels)
+		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_LABELS, moduleLabels)
 	}
 	return ruleInfoss, originatingRules
 }
@@ -107,8 +112,8 @@ func haskellModuleRulesToRuleInfos(
 
 		ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
 
-		r.SetPrivateAttr("indexing_mod_name", ruleInfo.ModuleData.ModuleName)
-		r.SetPrivateAttr("originating_rule", ruleInfo.OriginatingRule)
+		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
+		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRule)
 	}
 	return ruleInfoss
 }
@@ -147,8 +152,8 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 	for i, ruleInfo := range ruleInfos {
 		ruleName := ruleNameFromRuleInfo(ruleInfo)
 		r := rule.NewRule("haskell_module", ruleName)
-		r.SetPrivateAttr("indexing_mod_name", ruleInfo.ModuleData.ModuleName)
-		r.SetPrivateAttr("originating_rule", ruleInfo.OriginatingRule)
+		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
+		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRule)
 		file, _ := filepath.Rel(pkgRoot, ruleInfo.ModuleData.FilePath)
 		r.SetAttr("src", file)
 		r.SetAttr("src_strip_prefix", srcStripPrefix(file, ruleInfo.ModuleData.ModuleName))
@@ -207,9 +212,9 @@ func addNonHaskellModuleRules(
 			})
 			haskellRules = append(haskellRules, newr)
 
-			r.SetPrivateAttr("library_dep_labels", deps)
-			newr.SetPrivateAttr("library_dep_labels", deps)
-			newr.SetPrivateAttr("module_labels", r.PrivateAttr("module_labels"))
+			r.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
+			newr.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
+			newr.SetPrivateAttr(PRIVATE_ATTR_MODULE_LABELS, r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS))
 		}
 	}
 	return language.GenerateResult{

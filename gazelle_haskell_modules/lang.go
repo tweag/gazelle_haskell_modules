@@ -120,12 +120,12 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))},
 		}
 	} else if isNonHaskellModule(r.Kind()) {
-		modules := r.PrivateAttr("module_labels")
+		modules := r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS)
 		moduleLabels := map[label.Label]bool{}
 		if modules != nil {
 			moduleLabels = modules.(map[label.Label]bool)
 		}
-		libraryDeps := r.PrivateAttr("library_dep_labels")
+		libraryDeps := r.PrivateAttr(PRIVATE_ATTR_DEP_LABELS)
 		libraryDepLabels := map[label.Label]bool{}
 		if libraryDeps != nil {
 			libraryDepLabels = libraryDeps.(map[label.Label]bool)
@@ -208,10 +208,10 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 ////////////////////////////////
 
 func getModuleNameFromRule(r *rule.Rule) string {
-	if r.PrivateAttr("indexing_mod_name") == nil {
-		log.Fatal("Error reading indexing_mod_name of " + r.Name())
+	if r.PrivateAttr(PRIVATE_ATTR_MODULE_NAME) == nil {
+		log.Fatal("Error reading module name of " + r.Name())
 	}
-	return r.PrivateAttr("indexing_mod_name").(string)
+	return r.PrivateAttr(PRIVATE_ATTR_MODULE_NAME).(string)
 }
 
 func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string {
@@ -226,7 +226,7 @@ func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string 
 }
 
 func getOriginatingRule(r *rule.Rule) *rule.Rule {
-	v := r.PrivateAttr("originating_rule")
+	v := r.PrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE)
 	if v != nil {
 		return v.(*rule.Rule)
 	}
