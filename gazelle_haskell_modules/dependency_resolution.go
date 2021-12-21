@@ -238,7 +238,7 @@ func findModuleLabelByModuleFilePath(
 		return nil, fmt.Errorf("Can't make src relative: %q: %v", moduleFilePath, err)
 	}
 
-	spec := resolve.ImportSpec{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", from.Pkg, componentName, relModuleFilePath)}
+	spec := moduleByFilepathSpec(from.Pkg, componentName, relModuleFilePath)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	switch len(res) {
@@ -281,6 +281,13 @@ func moduleByNameSpec(moduleName string) resolve.ImportSpec {
 	return resolve.ImportSpec {
 		gazelleHaskellModulesName,
 		fmt.Sprintf("module_name:%s", moduleName),
+	}
+}
+
+func moduleByFilepathSpec(pkg string, componentName string, relativeModuleFilePath string) resolve.ImportSpec {
+	return resolve.ImportSpec{
+		gazelleHaskellModulesName,
+		fmt.Sprintf("filepath:%s:%s:%s", pkg, componentName, relativeModuleFilePath),
 	}
 }
 

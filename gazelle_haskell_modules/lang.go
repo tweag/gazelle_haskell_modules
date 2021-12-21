@@ -3,7 +3,6 @@ package gazelle_haskell_modules
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -117,7 +116,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 		return []resolve.ImportSpec{
 			moduleByNameSpec(getModuleNameFromRule(r)),
-			{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))},
+			moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r)),
 		}
 	} else if isNonHaskellModule(r.Kind()) {
 		modules := r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS)
