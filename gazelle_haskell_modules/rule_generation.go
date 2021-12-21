@@ -59,7 +59,6 @@ func nonHaskellModuleRulesToRuleInfos(
 			ruleInfos[i] = &RuleInfo {
 				OriginatingRule: r,
 				ModuleData: modData,
-				Modules: modules,
 			}
 			moduleLabels[label.New(repo, pkg, ruleNameFromRuleInfo(ruleInfos[i]))] = true
 		}
@@ -104,7 +103,6 @@ func haskellModuleRulesToRuleInfos(
 		ruleInfo := RuleInfo {
 			OriginatingRule: originatingRule,
 			ModuleData: modDatas[0],
-			Modules: map[label.Label]bool{},
 		}
 
 		ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
@@ -307,7 +305,6 @@ type ModuleData struct {
 
 type RuleInfo struct {
 	OriginatingRule *rule.Rule
-	Modules map[label.Label]bool // Absolute labels of the modules in the library, empty if not a library
 	ModuleData *ModuleData
 }
 
