@@ -145,18 +145,22 @@ func findModuleLabelByModuleName(
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
-	var foundLabel *label.Label
+	var foundLabel label.Label
 	for _, r := range res {
 		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), originalLibs)
 		if len(intersection) > 0 {
-			if foundLabel != nil {
-				return nil, fmt.Errorf("Multiple rules define %q in %v: %v and %v", moduleName, intersection, *foundLabel, r.Label)
+			if foundLabel.Name != "" {
+				return nil, fmt.Errorf("Multiple rules define %q in %v: %v and %v", moduleName, intersection, foundLabel, r.Label)
 			} else {
-				foundLabel = &r.Label
+				foundLabel = r.Label
 			}
 		}
 	}
-	return foundLabel, nil
+	if foundLabel.Name != "" {
+		return &foundLabel, nil
+	} else {
+		return nil, nil
+	}
 }
 
 func findCrossLibraryModuleLabelByModuleName(
@@ -169,34 +173,38 @@ func findCrossLibraryModuleLabelByModuleName(
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
-	var foundLabel *label.Label
-	var foundNarrowedLibLabel *label.Label
-	var foundOriginalLibLabel *label.Label
+	var foundLabel label.Label
+	var foundNarrowedLibLabel label.Label
+	var foundOriginalLibLabel label.Label
 	for _, r := range res {
 		narrowedLib, originalLib := isDepOfAnyLibrary(ix, librariesOfModule(ix, r.Label), originalLibs)
 		if narrowedLib != nil {
-			if foundLabel != nil {
+			if foundLabel.Name != "" {
 				lbls := make([]label.Label, len(res))
 				for i, r1 := range res {
 					lbls[i] = r1.Label
 				}
 				return nil, fmt.Errorf("Multiple rules define %q in narrowed deps of %v and %v: %v and %v with narrowed_deps %v and %v",
 				              moduleName,
-							  *foundOriginalLibLabel,
+							  foundOriginalLibLabel,
 							  originalLib,
-							  *foundLabel,
+							  foundLabel,
 							  r.Label,
-							  *foundNarrowedLibLabel,
-							  *narrowedLib,
+							  foundNarrowedLibLabel,
+							  narrowedLib,
 						  )
 			} else {
-				foundLabel = &r.Label
-				foundNarrowedLibLabel = narrowedLib
-				foundOriginalLibLabel = originalLib
+				foundLabel = r.Label
+				foundNarrowedLibLabel = *narrowedLib
+				foundOriginalLibLabel = *originalLib
 			}
 		}
 	}
-	return foundLabel, nil
+	if foundLabel.Name != "" {
+		return &foundLabel, nil
+	} else {
+		return nil, nil
+	}
 }
 
 func intersectLabelArrays(a []label.Label, b []label.Label) []label.Label {
