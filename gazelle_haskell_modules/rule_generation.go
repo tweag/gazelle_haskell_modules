@@ -20,18 +20,22 @@ import (
 // Extracts the source files from Haskell rules and creates
 // haskell_module rules to build them.
 //
-// For existing haskell_module rules, it sets the indexing_mod_name and originating_rule
-// private attributes as a side effect!
-// They are needed when indexing the rule.
+// For existing haskell_module rules, it also sets some private attributes as a side effect
+// which are needed when indexing the rule.
 func rulesToRuleInfos(pkgRoot string, rules []*rule.Rule, repo string, pkg string) []*RuleInfo {
 	ruleInfoss0, originatingRules := nonHaskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg)
 	ruleInfoss1 := haskellModuleRulesToRuleInfos(pkgRoot, rules, repo, pkg, originatingRules)
 	return concatRuleInfos(append(ruleInfoss0, ruleInfoss1...))
 }
 
-// Yields the rule infos and a map of dependency labels to the rule that
-// has that dependency. If multiple rules have the same dependency only one
-// of them ends up in the entry of the dependency.
+const PRIVATE_ATTR_MODULE_LABELS = "module_labels"
+const PRIVATE_ATTR_DEP_LABELS = "dep_labels"
+const PRIVATE_ATTR_MODULE_NAME = "module_name"
+const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
+
+// Yields the rule infos and a map of module labels to the rule that
+// has that module dependency. If multiple rules have the same module only one
+// of them ends up in the entry of the module.
 //
 func nonHaskellModuleRulesToRuleInfos(
 	pkgRoot string,
@@ -54,18 +58,22 @@ func nonHaskellModuleRulesToRuleInfos(
 
 		modDatas := haskellModulesToModuleData(srcs)
 		ruleInfos := make([]*RuleInfo, len(modDatas))
+		moduleLabels := make(map[label.Label]bool, len(modules) + len(srcs))
 		for i, modData := range modDatas {
 			ruleInfos[i] = &RuleInfo {
 				OriginatingRule: r,
 				ModuleData: modData,
-				Modules: modules,
 			}
+			moduleLabels[label.New(repo, pkg, ruleNameFromRuleInfo(ruleInfos[i]))] = true
 		}
 		ruleInfoss = append(ruleInfoss, ruleInfos)
 
-		for dep, _ := range modules {
-			originatingRules[dep] = r
+		for mod, _ := range modules {
+			originatingRules[mod] = r
+			moduleLabels[mod] = true
 		}
+
+		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_LABELS, moduleLabels)
 	}
 	return ruleInfoss, originatingRules
 }
@@ -99,13 +107,12 @@ func haskellModuleRulesToRuleInfos(
 		ruleInfo := RuleInfo {
 			OriginatingRule: originatingRule,
 			ModuleData: modDatas[0],
-			Modules: map[label.Label]bool{},
 		}
 
 		ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
 
-		r.SetPrivateAttr("indexing_mod_name", ruleInfo.ModuleData.ModuleName)
-		r.SetPrivateAttr("originating_rule", ruleInfo.OriginatingRule)
+		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
+		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRule)
 	}
 	return ruleInfoss
 }
@@ -144,8 +151,8 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 	for i, ruleInfo := range ruleInfos {
 		ruleName := ruleNameFromRuleInfo(ruleInfo)
 		r := rule.NewRule("haskell_module", ruleName)
-		r.SetPrivateAttr("indexing_mod_name", ruleInfo.ModuleData.ModuleName)
-		r.SetPrivateAttr("originating_rule", ruleInfo.OriginatingRule)
+		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
+		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRule)
 		file, _ := filepath.Rel(pkgRoot, ruleInfo.ModuleData.FilePath)
 		r.SetAttr("src", file)
 		r.SetAttr("src_strip_prefix", srcStripPrefix(file, ruleInfo.ModuleData.ModuleName))
@@ -153,8 +160,8 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 
 		theRules[i] = r
 		theImports[i] = &HModuleImportData {
-			OriginatingRule: ruleInfo.OriginatingRule,
 			ImportedModules: ruleInfo.ModuleData.ImportedModules,
+			UsesTH: ruleInfo.ModuleData.UsesTH,
 		}
 	}
 
@@ -191,16 +198,32 @@ func addNonHaskellModuleRules(
 			handleRuleError(err, r, "srcs")
 			modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
 			handleRuleError(err, r, "modules")
+			deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
+			handleRuleError(err, r, "deps")
+			narrowedDeps, err := depsFromRule(r.Attr("narrowed_deps"), repo, pkg)
+			handleRuleError(err, r, "narrowed_deps")
+			appendLabelMaps(deps, narrowedDeps)
 			imports = append(imports, &HRuleImportData {
+				Deps: deps,
 				Modules: modules,
 				Srcs: srcs,
 			})
 			haskellRules = append(haskellRules, newr)
+
+			r.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
+			newr.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
+			newr.SetPrivateAttr(PRIVATE_ATTR_MODULE_LABELS, r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS))
 		}
 	}
 	return language.GenerateResult{
 		Gen:     append(gen.Gen, haskellRules...),
 		Imports: append(gen.Imports, imports...),
+	}
+}
+
+func appendLabelMaps(a map[label.Label]bool, b map[label.Label]bool) {
+	for k, v := range b {
+		a[k] = v
 	}
 }
 
@@ -280,20 +303,21 @@ type ModuleData struct {
 	ModuleName string
 	FilePath  string
 	ImportedModules []string
+	UsesTH bool
 }
 
 type RuleInfo struct {
 	OriginatingRule *rule.Rule
-	Modules map[label.Label]bool // Absolute labels of the modules in the library, empty if not a library
 	ModuleData *ModuleData
 }
 
 type HModuleImportData struct {
-	OriginatingRule *rule.Rule
 	ImportedModules []string
+	UsesTH bool
 }
 
 type HRuleImportData struct {
+	Deps map[label.Label]bool // Absolute labels of deps of the library/binary/test
 	Modules map[label.Label]bool // Absolute labels of the modules in the library, empty if not a library
 	Srcs []string
 }

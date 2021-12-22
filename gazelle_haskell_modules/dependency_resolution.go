@@ -4,6 +4,7 @@ package gazelle_haskell_modules
 import (
 	"fmt"
 
+	//"github.com/bazelbuild/buildtools/build"
 	//"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
 	//"github.com/bazelbuild/bazel-gazelle/language"
@@ -23,6 +24,10 @@ import (
 //
 // Adds to the modules attribute the labels of all haskell_module
 // rules originated from this rule.
+//
+// Also splits deps into deps and narrowed_deps. Any dependency
+// from deps that uses the modules attribute is moved to narrowed_deps.
+//
 func setNonHaskellModuleDeps(
 	c *Config,
 	repoRoot string,
@@ -50,7 +55,25 @@ func setNonHaskellModuleDeps(
 	}
 	sort.Strings(moduleStrings)
 
-	r.SetAttr("modules", moduleStrings)
+	depStrings := make([]string, 0, len(importData.Deps))
+	narrowedDepStrings := make([]string, 0, len(importData.Deps))
+	for dep := range importData.Deps {
+		if doesLibraryUseModules(ix, dep) {
+			narrowedDepStrings = append(narrowedDepStrings, rel(dep, from).String())
+		} else {
+			depStrings = append(depStrings, rel(dep, from).String())
+		}
+	}
+
+	if len(depStrings) > 0 {
+		r.SetAttr("deps", depStrings)
+	}
+	if len(narrowedDepStrings) > 0 {
+		r.SetAttr("narrowed_deps", narrowedDepStrings)
+	}
+	if len(moduleStrings) > 0 {
+		r.SetAttr("modules", moduleStrings)
+	}
 }
 
 // Sets as deps the labels of all imported modules.
@@ -62,57 +85,154 @@ func setHaskellModuleDeps(
 	importData *HModuleImportData,
 	from label.Label,
 ) {
-	originalComponentName := importData.OriginatingRule.Name()
+	originalLibs := librariesOfModule(ix, label.New(from.Repo, from.Pkg, r.Name()))
 	depsCapacity := len(importData.ImportedModules)
 	deps := make([]string, 0, depsCapacity)
+	crossLibraryDeps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
-		dep, err := findModuleLabelByModuleName(ix, mod, originalComponentName, from)
+		dep, err := findModuleLabelByModuleName(ix, mod, originalLibs)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
-		if dep == nil {
+		if dep != nil {
+			deps = append(deps, rel(*dep, from).String())
 			continue
 		}
-		deps = append(deps, rel(*dep, from).String())
+		
+		dep, err = findCrossLibraryModuleLabelByModuleName(ix, mod, originalLibs)
+		if err != nil {
+			log.Fatal("On rule ", r.Name(), ": ", err)
+		}
+		if dep != nil {
+			crossLibraryDeps = append(crossLibraryDeps, rel(*dep, from).String())
+		}
 	}
 
+	if importData.UsesTH || optionsEnableTH(r.AttrStrings("ghcopts")) {
+		r.SetAttr("enable_th", true)
+	}
 	if len(deps) > 0 {
 		r.SetAttr("deps", deps)
 	}
+	if len(crossLibraryDeps) > 0 {
+		r.SetAttr("cross_library_deps", crossLibraryDeps)
+	}
 }
 
-// Yields the label of a module with the given name.
+func optionsEnableTH(opts []string) bool {
+	for _, o := range opts {
+		if o == "-XTemplateHaskell" || o == "-XQuasiQuotes" {
+			return true
+		}
+	}
+	return false
+}
+
+// Yields the label of a haskell_module rule for a module with the
+// given name coming from any library in libs.
 //
-// If the importing module comes from the same component (originalComponentName)
-// as the given moduleName, the rule defining the module for the given component is
-// chosen.
-//
-// If multiple rules define the module, an error is returned.
+// If multiple such rules define the module, an error is returned.
 //
 // If no rule defines the module, nil is returned.
 //
 func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
 	moduleName string,
-	originalComponentName string,
-	from label.Label,
+	libs []label.Label,
 ) (*label.Label, error) {
-	spec := resolve.ImportSpec{gazelleHaskellModulesName, fmt.Sprintf("module_name:%s:%s:%s", from.Pkg, originalComponentName, moduleName)}
+	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
-	switch len(res) {
-	case 1:
-		lbl := rel(res[0].Label, from)
-		return &lbl, nil
-	case 0:
-		return nil, nil
-	default:
-		lbls := make([]label.Label, len(res))
-		for i, r := range res {
-			lbls[i] = r.Label
+	var foundLabel label.Label
+	for _, r := range res {
+		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
+		if len(intersection) > 0 {
+			if foundLabel.Name != "" {
+				return nil, fmt.Errorf("Multiple rules define %q in %v: %v and %v", moduleName, intersection, foundLabel, r.Label)
+			} else {
+				foundLabel = r.Label
+			}
 		}
-		return nil, fmt.Errorf("Multiple rules define %q in %v: %v ", moduleName, label.New(from.Repo, from.Pkg, originalComponentName), lbls)
 	}
+	if foundLabel.Name != "" {
+		return &foundLabel, nil
+	} else {
+		return nil, nil
+	}
+}
+
+// Yields the label of a haskell_module rule for a module with the
+// given name coming from some library that is a dependency of a
+// library in libs.
+//
+// If multiple such rules define the module, an error is returned.
+//
+// If no rule defines the module, nil is returned.
+//
+func findCrossLibraryModuleLabelByModuleName(
+	ix *resolve.RuleIndex,
+	moduleName string,
+	libs []label.Label,
+) (*label.Label, error) {
+	spec := moduleByNameSpec(moduleName)
+	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
+
+	var foundLabel label.Label
+	var foundNarrowedLibLabel label.Label
+	var foundOriginalLibLabel label.Label
+	for _, r := range res {
+		narrowedLib, originalLib := isDepOfAnyLibrary(ix, librariesOfModule(ix, r.Label), libs)
+		if narrowedLib != nil {
+			if foundLabel.Name != "" {
+				lbls := make([]label.Label, len(res))
+				for i, r1 := range res {
+					lbls[i] = r1.Label
+				}
+				return nil, fmt.Errorf("Multiple rules define %q in narrowed deps of %v and %v: %v and %v with narrowed_deps %v and %v",
+				              moduleName,
+							  foundOriginalLibLabel,
+							  originalLib,
+							  foundLabel,
+							  r.Label,
+							  foundNarrowedLibLabel,
+							  narrowedLib,
+						  )
+			} else {
+				foundLabel = r.Label
+				foundNarrowedLibLabel = *narrowedLib
+				foundOriginalLibLabel = *originalLib
+			}
+		}
+	}
+	if foundLabel.Name != "" {
+		return &foundLabel, nil
+	} else {
+		return nil, nil
+	}
+}
+
+func intersectLabelArrays(a []label.Label, b []label.Label) []label.Label {
+	res := make([]label.Label, 0, len(a))
+	for _, lbla := range a {
+		for _, lblb := range b {
+			if lbla == lblb {
+				res = append(res, lbla)
+				break
+			}
+		}
+	}
+	return res
+}
+
+func librariesOfModule(ix *resolve.RuleIndex, moduleLabel label.Label) []label.Label {
+	spec := libraryOfModuleSpec(moduleLabel)
+	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
+
+	libs := make([]label.Label, len(res))
+	for i, r := range res {
+		libs[i] = r.Label
+	}
+	return libs
 }
 
 func findModuleLabelByModuleFilePath(
@@ -127,7 +247,7 @@ func findModuleLabelByModuleFilePath(
 		return nil, fmt.Errorf("Can't make src relative: %q: %v", moduleFilePath, err)
 	}
 
-	spec := resolve.ImportSpec{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", from.Pkg, componentName, relModuleFilePath)}
+	spec := moduleByFilepathSpec(from.Pkg, componentName, relModuleFilePath)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	switch len(res) {
@@ -142,6 +262,64 @@ func findModuleLabelByModuleFilePath(
 			lbls[i] = r.Label
 		}
 		return nil, fmt.Errorf("Multiple rules define %q in %v: %v ", moduleFilePath, label.New(from.Repo, from.Pkg, componentName), lbls)
+	}
+}
+
+func doesLibraryUseModules(ix *resolve.RuleIndex, libraryLabel label.Label) bool {
+	spec := libraryUsesModulesSpec(libraryLabel)
+	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
+
+	return len(res) > 0
+}
+
+func libraryUsesModulesSpec(libLabel label.Label) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("library_uses_modules:%s", libLabel.String()),
+	}
+}
+
+func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("library_of_module:%s", moduleLabel.String()),
+	}
+}
+
+func moduleByNameSpec(moduleName string) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("module_name:%s", moduleName),
+	}
+}
+
+func moduleByFilepathSpec(pkg string, componentName string, relativeModuleFilePath string) resolve.ImportSpec {
+	return resolve.ImportSpec{
+		gazelleHaskellModulesName,
+		fmt.Sprintf("filepath:%s:%s:%s", pkg, componentName, relativeModuleFilePath),
+	}
+}
+
+func isDepOfAnyLibrary(ix *resolve.RuleIndex, depLabels []label.Label, libs []label.Label) (*label.Label, *label.Label) {
+
+	for _, depLabel := range depLabels {
+		for _, lib := range libs {
+			spec := isDepOfLibrarySpec(depLabel, lib.Pkg, lib.Name)
+			res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
+
+			if len(res) > 0 {
+				return &depLabel, &lib
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+func isDepOfLibrarySpec(dep label.Label, pkg string, libName string) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("is_dep_of:%s:%s:%s", dep.String(), pkg, libName),
 	}
 }
 

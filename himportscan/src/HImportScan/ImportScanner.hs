@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -14,7 +15,7 @@ module HImportScan.ImportScanner
 
 import Control.Monad (void)
 import qualified Data.Aeson as Aeson
-import Data.Char (toLower)
+import Data.Char (isAlphaNum, isSpace, toLower)
 import Data.List (isSuffixOf, nub)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -34,14 +35,16 @@ data ScannedImports = ScannedImports
   { filePath :: Text  -- ^ Path of the Haskell module
   , moduleName :: Text  -- ^ The module name
   , importedModules :: [Text] -- ^ The modules imported in this module
+  , usesTH :: Bool  -- ^ Whether the module needs TH or the interpreter
   }
 
 instance Aeson.ToJSON ScannedImports where
-  toJSON (ScannedImports filePath moduleName importedModules) =
+  toJSON (ScannedImports filePath moduleName importedModules usesTH) =
     Aeson.object
       [ ("filePath", Aeson.String filePath)
       , ("moduleName", Aeson.String moduleName)
       , ("importedModules", Aeson.toJSON importedModules)
+      , ("usesTH", Aeson.toJSON usesTH)
       ]
 
 -- | Retrieves the names of modules imported in the given
@@ -54,11 +57,12 @@ scanImports filePath = withFile filePath ReadMode $ \h -> do
       loc = mkRealSrcLoc (mkFastString filePath) 1 1
   case scanTokenStream filePath $ lexTokenStream sbuffer loc of
     Left err -> error err
-    Right (moduleName, importedModules) ->
+    Right ScannedData{moduleName, importedModules, usesTH} ->
       return ScannedImports
         { filePath = Text.pack filePath
         , moduleName
         , importedModules
+        , usesTH
         }
 
   where
@@ -98,17 +102,35 @@ flipBirdTracks f =
     flipBirdTrack ('>' : xs) = ' ' : xs
     flipBirdTrack _ = " "
 
-scanTokenStream :: FilePath -> [Located Token] -> Either String (Text, [Text])
+data ScannedData = ScannedData
+    { moduleName :: Text
+    , importedModules :: [Text]
+    , usesTH :: Bool
+    }
+
+scanTokenStream :: FilePath -> [Located Token] -> Either String ScannedData
 scanTokenStream fp toks =
   case parse parser fp toks of
     Left e -> Left (show e)
     Right a -> Right a
   where
     parser = do
+      langExts <- concat <$> many parseLanguagePragma
       modName <- parseModuleHeader <|> return "Main"
       _ <- optional $ satisfy "virtual brace" $ \case ITvocurly -> Just (); _ -> Nothing
       imports <- many parseImport
-      return (modName, nub imports)
+      return ScannedData
+        { moduleName = modName
+        , importedModules = nub imports
+        , usesTH = any (`elem` ["TemplateHaskell", "QuasiQuotes"]) langExts
+        }
+
+    parseLanguagePragma :: Parsec [Located Token] () [String]
+    parseLanguagePragma = do
+      satisfyEvenComments "LANGUAGE pragma" $ \case
+        ITblockComment s -> Just (getLanguageExtensionsMaybe s)
+        ITlineComment _ -> Just []
+        _ -> Nothing
 
     parseModuleHeader = do
       _ <- satisfy "module" $ \case
@@ -148,7 +170,16 @@ scanTokenStream fp toks =
         skipMany $ satisfy "not ( or )" $ \case IToparen -> Nothing; ITcparen -> Nothing; _ -> Just ()
       void $ satisfy ")" $ \case ITcparen -> Just (); _ -> Nothing
 
-    satisfy lbl f = token (show . unLoc) locToSourcePos (f . unLoc) <?> lbl
+    satisfy lbl f = satisfyEvenComments lbl f <* skipMany comment
+
+    satisfyEvenComments lbl f =
+      token (show . unLoc) locToSourcePos (f . unLoc) <?> lbl
+
+    comment :: Parsec [Located Token] () String
+    comment = satisfyEvenComments "comment" $ \case
+      ITblockComment c -> Just c
+      ITlineComment c -> Just c
+      _ -> Nothing
 
     locToSourcePos :: Located a -> SourcePos
     locToSourcePos loc =
@@ -159,6 +190,26 @@ scanTokenStream fp toks =
             _ ->
               newPos fp 0 0
 
+getLanguageExtensionsMaybe :: String -> [String]
+getLanguageExtensionsMaybe = \case
+    '{':'-':'#':s0 ->
+      case dropWhile isSpace s0 of
+        'L':'A':'N':'G':'U':'A':'G':'E':x:s1 | isSpace x ->
+          readLanguageExtensions [] s1
+        _ ->
+          []
+    _ ->
+      []
+  where
+    readLanguageExtensions acc s =
+      case takeLanguageExtension s of
+        (e, rest) | not (null e) -> readLanguageExtensions (e : acc) rest
+        _ -> acc
+
+    takeLanguageExtension s =
+      span isAlphaNum $
+      dropWhile (\x -> isSpace x || x == ',') s
+
 lexTokenStream :: StringBuffer -> RealSrcLoc -> [Located Token]
 lexTokenStream buf loc =
   let allExtensions = [minBound..maxBound]
@@ -168,7 +219,7 @@ lexTokenStream buf loc =
         (error "lexTokenStreamUnitId")
         False
         False
-        False
+        True
         True
       initState = mkPStatePure parserFlags buf loc
    in go initState

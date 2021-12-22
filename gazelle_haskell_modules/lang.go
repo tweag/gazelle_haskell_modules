@@ -3,7 +3,6 @@ package gazelle_haskell_modules
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -69,6 +68,8 @@ var haskellAttrInfo = rule.KindInfo{
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
 		"modules":        true,
+		"deps":           true,
+		"narrowed_deps":  true,
 		"srcs":           true,
 	},
 }
@@ -77,7 +78,9 @@ var haskellModuleAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"deps":             true,
+		"deps":               true,
+		"cross_library_deps": true,
+		"enable_th":          true,
 	},
 }
 
@@ -112,9 +115,34 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			return []resolve.ImportSpec{}
 		}
 		return []resolve.ImportSpec{
-			{gazelleHaskellModulesName, fmt.Sprintf("module_name:%s:%s:%s", f.Pkg, originatingRule.Name(), getModuleNameFromRule(r))},
-			{gazelleHaskellModulesName, fmt.Sprintf("filepath:%s:%s:%s", f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))},
+			moduleByNameSpec(getModuleNameFromRule(r)),
+			moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r)),
 		}
+	} else if isNonHaskellModule(r.Kind()) {
+		modules := r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS)
+		moduleLabels := map[label.Label]bool{}
+		if modules != nil {
+			moduleLabels = modules.(map[label.Label]bool)
+		}
+		libraryDeps := r.PrivateAttr(PRIVATE_ATTR_DEP_LABELS)
+		libraryDepLabels := map[label.Label]bool{}
+		if libraryDeps != nil {
+			libraryDepLabels = libraryDeps.(map[label.Label]bool)
+		}
+
+		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels) + len(libraryDepLabels) + 1)
+		i := 0
+		for moduleLabel := range moduleLabels {
+			moduleSpecs[i] = libraryOfModuleSpec(moduleLabel)
+			i++
+		}
+		i = 0
+		for libLabel := range libraryDepLabels {
+			moduleSpecs[len(moduleLabels) + i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
+			i++
+		}
+		moduleSpecs[len(moduleSpecs) - 1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
+		return moduleSpecs
 	} else {
 		return []resolve.ImportSpec{}
 	}
@@ -179,10 +207,10 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 ////////////////////////////////
 
 func getModuleNameFromRule(r *rule.Rule) string {
-	if r.PrivateAttr("indexing_mod_name") == nil {
-		log.Fatal("Error reading indexing_mod_name of " + r.Name())
+	if r.PrivateAttr(PRIVATE_ATTR_MODULE_NAME) == nil {
+		log.Fatal("Error reading module name of " + r.Name())
 	}
-	return r.PrivateAttr("indexing_mod_name").(string)
+	return r.PrivateAttr(PRIVATE_ATTR_MODULE_NAME).(string)
 }
 
 func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string {
@@ -197,7 +225,7 @@ func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string 
 }
 
 func getOriginatingRule(r *rule.Rule) *rule.Rule {
-	v := r.PrivateAttr("originating_rule")
+	v := r.PrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE)
 	if v != nil {
 		return v.(*rule.Rule)
 	}
