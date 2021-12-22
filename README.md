@@ -233,7 +233,7 @@ Have questions? Need help? Tweet at
 
 [bazel]: https://bazel.build
 [himportscan]: himportscan/exe/Main.hs
-[gazelle_haskell_module_dependencies]: defs.bzl
+[gazelle_haskell_modules_dependencies]: defs.bzl
 [example]: example
 [fix-command]: https://github.com/bazelbuild/bazel-gazelle#fix-and-update
 [gazelle]: https://github.com/bazelbuild/bazel-gazelle
