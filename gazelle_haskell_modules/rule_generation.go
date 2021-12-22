@@ -191,8 +191,7 @@ func addNonHaskellModuleRules(
 		if isNonHaskellModule(r.Kind()) {
 			newr := rule.NewRule(r.Kind(), r.Name())
 			for _, k := range r.AttrKeys() {
-				// Empty lists in attributes crash gazelle, so we remove them here.
-				if k != "srcs" && k != "modules" && !isEmptyListExpr(r.Attr(k)) {
+				if k != "srcs" && k != "modules" && k != "deps" && k != "narrowed_deps" {
 					newr.SetAttr(k, r.Attr(k))
 				}
 			}
@@ -428,15 +427,6 @@ func srcStripPrefix(file, modName string) string {
      dir = filepath.Dir(dir)
    }
    return dir
-}
-
-func isEmptyListExpr(expr build.Expr) bool {
-	switch expr.(type) {
-	case *build.ListExpr:
-		return len(expr.(*build.ListExpr).List) == 0
-	default:
-		return false
-	}
 }
 
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
