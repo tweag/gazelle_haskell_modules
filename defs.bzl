@@ -8,13 +8,9 @@ package(default_visibility = ["//visibility:public"])
 
 alias(name="aeson", actual="{aeson}")
 alias(name="parsec", actual="{parsec}")
-alias(name="path", actual="{path}")
-alias(name="path-io", actual="{path_io}")
         '''.format(
             aeson = repository_ctx.attr.aeson,
             parsec = repository_ctx.attr.parsec,
-            path = repository_ctx.attr.path,
-            path_io = repository_ctx.attr.path_io,
         ),
         executable = False,
     )
@@ -25,8 +21,6 @@ _gazelle_haskell_modules_dependencies = repository_rule(
     attrs = {
         "aeson": attr.label(default = "@stackage//:aeson"),
         "parsec": attr.label(default = "@stackage//:parsec"),
-        "path": attr.label(default = "@stackage//:path"),
-        "path_io": attr.label(default = "@stackage//:path-io"),
     },
 )
 
@@ -48,8 +42,6 @@ def gazelle_haskell_modules_dependencies(**kargs):
       gazelle_haskell_modules_dependencies(
           aeson = "@someother//:some-other-aeson",
           parsec = "@someother//:parsec",
-          path = "@someother//:some-path",
-          path_io = "@someother//:another-path-io",
       )
 
       ```
