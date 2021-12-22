@@ -192,6 +192,29 @@ with `-XPackageImports`. If two modules with the same module name are
 available, `gazelle_haskell_modules` would currently complain of an
 ambiguity when resolving dependencies.
 
+### Detection of TemplateHaskell
+
+`gazelle_haskell_modules` detects modules that use `TemplateHaskell` by
+looking at the `LANGUAGE` pragmas and the `ghcopts` attribute of the
+`haskell_module` rule. But the internal or external interpreter could be
+activated by using `ANN` pragmas in the module source, or by using
+`-XTemplateHaskell` in the `ghcopts` attribute of the enclosing library.
+In these cases, `enable_th` won't be set on the `haskell_module` rule
+and complains about missing libraries or object files will ensue.
+
+To workaround this, you could set `enable_th = True` manually on
+the `haskell_module` rule and use a `#keep` comment.
+
+```
+haskell_module(
+	name = "...",
+	...
+	#keep
+	enable_th = True,
+	...
+)
+```
+
 ## What's next
 
 - [X] Have `haskell_module` rules depend on each other.
