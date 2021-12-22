@@ -5,7 +5,7 @@ rules from `haskell_library`, `haskell_binary`, and `haskell_test` as
 defined in [Haskell rules][rules_haskell] for [Bazel][bazel].
 
 For each `haskell_library` rule, `haskell_module` rules are generated
-in the same `BUILD` for all modules listed in the `srcs` attribute.
+in the same `BUILD` file for all modules listed in the `srcs` attribute.
 
 This [example repo][example] shows it in action.
 
@@ -105,8 +105,8 @@ dependencies. Adding an import to a module that is defined in the current
 repo, will add that module to the dependencies if the importer and the
 imported come from the same library, binary, or test.
 
-If the origin of a `haskell_module` rule can't be determined, i.e. no
-library, binary, or test mentions the module, then it won't be updated.
+If no enclosing library, binary, or test can be found for a
+`haskell_module` rule, then it won't be updated.
 
 ## Implementation
 
