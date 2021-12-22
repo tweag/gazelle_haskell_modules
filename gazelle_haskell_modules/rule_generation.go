@@ -33,18 +33,16 @@ const PRIVATE_ATTR_DEP_LABELS = "dep_labels"
 const PRIVATE_ATTR_MODULE_NAME = "module_name"
 const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
 
-// Yields the rule infos and a map of module labels to the rule that
-// has that module dependency. If multiple rules have the same module only one
-// of them ends up in the entry of the module.
-//
+// Yields the rule infos and a map of module labels to the rules that
+// enclose the modules.
 func nonHaskellModuleRulesToRuleInfos(
 	pkgRoot string,
 	rules []*rule.Rule,
 	repo string,
 	pkg string,
-) ([][]*RuleInfo, map[label.Label]*rule.Rule) {
+) ([][]*RuleInfo, map[label.Label][]*rule.Rule) {
 	ruleInfoss := make([][]*RuleInfo, 0, 100)
-	originatingRules := make(map[label.Label]*rule.Rule, 100)
+	originatingRules := make(map[label.Label][]*rule.Rule, 100)
 	// Analyze non-haskell_module rules
 	for _, r := range rules {
 		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) {
@@ -61,7 +59,7 @@ func nonHaskellModuleRulesToRuleInfos(
 		moduleLabels := make(map[label.Label]bool, len(modules) + len(srcs))
 		for i, modData := range modDatas {
 			ruleInfos[i] = &RuleInfo {
-				OriginatingRule: r,
+				OriginatingRules: []*rule.Rule{r},
 				ModuleData: modData,
 			}
 			moduleLabels[label.New(repo, pkg, ruleNameFromRuleInfo(ruleInfos[i]))] = true
@@ -69,7 +67,12 @@ func nonHaskellModuleRulesToRuleInfos(
 		ruleInfoss = append(ruleInfoss, ruleInfos)
 
 		for mod, _ := range modules {
-			originatingRules[mod] = r
+			oRules := originatingRules[mod]
+			if oRules == nil {
+				originatingRules[mod] = []*rule.Rule{r}
+			} else {
+				originatingRules[mod] = append(oRules, r)
+			}
 			moduleLabels[mod] = true
 		}
 
@@ -86,7 +89,7 @@ func haskellModuleRulesToRuleInfos(
 	rules []*rule.Rule,
 	repo string,
 	pkg string,
-    originatingRules map[label.Label]*rule.Rule,
+	originatingRules map[label.Label][]*rule.Rule,
 ) [][]*RuleInfo {
 	ruleInfoss := make([][]*RuleInfo, 0, 100)
 	// Analyze haskell_module rules
@@ -98,21 +101,21 @@ func haskellModuleRulesToRuleInfos(
 		src := path.Join(pkgRoot, r.AttrString("src"))
 
 		rLabel := label.New(repo, pkg, r.Name())
-		originatingRule, ok := originatingRules[rLabel]
+		oRules, ok := originatingRules[rLabel]
 		if !ok {
 			continue
 		}
 
 		modDatas := haskellModulesToModuleData([]string{src})
 		ruleInfo := RuleInfo {
-			OriginatingRule: originatingRule,
+			OriginatingRules: oRules,
 			ModuleData: modDatas[0],
 		}
 
 		ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
 
 		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
-		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRule)
+		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
 	}
 	return ruleInfoss
 }
@@ -152,7 +155,7 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 		ruleName := ruleNameFromRuleInfo(ruleInfo)
 		r := rule.NewRule("haskell_module", ruleName)
 		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
-		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRule)
+		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
 		file, _ := filepath.Rel(pkgRoot, ruleInfo.ModuleData.FilePath)
 		r.SetAttr("src", file)
 		r.SetAttr("src_strip_prefix", srcStripPrefix(file, ruleInfo.ModuleData.ModuleName))
@@ -307,7 +310,7 @@ type ModuleData struct {
 }
 
 type RuleInfo struct {
-	OriginatingRule *rule.Rule
+	OriginatingRules []*rule.Rule
 	ModuleData *ModuleData
 }
 
@@ -437,11 +440,7 @@ func isEmptyListExpr(expr build.Expr) bool {
 }
 
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
-	if ruleInfo.OriginatingRule.Kind() != "haskell_module" {
-		return ruleInfo.OriginatingRule.Name() + "." + ruleInfo.ModuleData.ModuleName
-	} else {
-		return ruleInfo.OriginatingRule.Name()
-	}
+	return ruleInfo.OriginatingRules[0].Name() + "." + ruleInfo.ModuleData.ModuleName
 }
 
 func shouldModularize(r *rule.Rule) bool {

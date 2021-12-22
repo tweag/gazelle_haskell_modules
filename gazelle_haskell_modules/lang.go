@@ -110,14 +110,13 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	if r.Kind() == "haskell_module" {
-		originatingRule := getOriginatingRule(r)
-		if originatingRule == nil {
-			return []resolve.ImportSpec{}
+		originatingRules := getOriginatingRules(r)
+		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules) + 1)
+		for i, originatingRule := range originatingRules {
+			moduleSpecs[i] = moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))
 		}
-		return []resolve.ImportSpec{
-			moduleByNameSpec(getModuleNameFromRule(r)),
-			moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r)),
-		}
+		moduleSpecs[len(moduleSpecs) - 1] = moduleByNameSpec(getModuleNameFromRule(r))
+		return moduleSpecs
 	} else if isNonHaskellModule(r.Kind()) {
 		modules := r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS)
 		moduleLabels := map[label.Label]bool{}
@@ -186,9 +185,7 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 	ruleNameSet := make(map[string]bool, len(ruleInfos))
 	for _, info := range ruleInfos {
 		rName := ruleNameFromRuleInfo(info)
-		if info.OriginatingRule.Name() != rName {
-			ruleNameSet[rName] = true
-		}
+		ruleNameSet[rName] = true
 	}
 
 	for _, r := range f.Rules {
@@ -224,10 +221,10 @@ func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string 
 	return src
 }
 
-func getOriginatingRule(r *rule.Rule) *rule.Rule {
+func getOriginatingRules(r *rule.Rule) []*rule.Rule {
 	v := r.PrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE)
 	if v != nil {
-		return v.(*rule.Rule)
+		return v.([]*rule.Rule)
 	}
 	return nil
 }
