@@ -188,7 +188,9 @@ generating rules or resolving imports.
 ### Package imports
 
 `gazelle_haskell_modules` ignores package imports as implemented in GHC
-with `-XPackageImports`.
+with `-XPackageImports`. If two modules with the same module name are
+available, `gazelle_haskell_modules` would currently complain of an
+ambiguity when resolving dependencies.
 
 ## What's next
 
