@@ -77,8 +77,10 @@ Build and run gazelle with
 bazel run //:gazelle
 ```
 
-Gazelle's [fix command][fix-command] can be used to delete rules when
-components are removed from the cabal file.
+Gazelle's [fix command][fix-command] can be used to delete
+`haskell_module` rules when they have no enclosing library, binary, or
+test. At the moment, the `fix` command only looks for enclosing
+rules in the same `BUILD` file containing the `haskell_module` rule.
 
 ## Rule generation
 
