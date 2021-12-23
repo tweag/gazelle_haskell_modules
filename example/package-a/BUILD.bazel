@@ -59,3 +59,8 @@ haskell_library(
         "@stackage//:base",
     ],
 )
+
+haskell_module(
+    name = "non-enclosed-module",
+    src = "app/Main.hs",
+)

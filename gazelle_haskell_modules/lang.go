@@ -111,11 +111,13 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	if r.Kind() == "haskell_module" {
 		originatingRules := getOriginatingRules(r)
-		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules) + 1)
+		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), len(originatingRules) + 1)
 		for i, originatingRule := range originatingRules {
 			moduleSpecs[i] = moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))
 		}
-		moduleSpecs[len(moduleSpecs) - 1] = moduleByNameSpec(getModuleNameFromRule(r))
+		if len(originatingRules) > 0 {
+			moduleSpecs = append(moduleSpecs, moduleByNameSpec(getModuleNameFromRule(r)))
+		}
 		return moduleSpecs
 	} else if isNonHaskellModule(r.Kind()) {
 		modules := r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS)
