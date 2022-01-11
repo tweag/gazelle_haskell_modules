@@ -177,10 +177,12 @@ scanTokenStream fp toks =
       token (show . unLoc) locToSourcePos (f . unLoc) <?> lbl
 
     comment :: Parsec [Located Token] () String
-    comment = satisfyEvenComments "comment" $ \case
-      ITblockComment c -> Just c
-      ITlineComment c -> Just c
-      _ -> Nothing
+    comment =
+      satisfyEvenComments "comment" (\case
+        ITblockComment c -> Just c
+        ITlineComment c -> Just c
+        _ -> Nothing
+      ) <* optional (satisfyEvenComments ";" $ \case ITsemi -> Just (); _ -> Nothing)
 
     locToSourcePos :: Located a -> SourcePos
     locToSourcePos loc =
