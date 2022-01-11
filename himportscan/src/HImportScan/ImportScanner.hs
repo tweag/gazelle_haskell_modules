@@ -118,6 +118,7 @@ scanTokenStream fp toks =
       langExts <- concat <$> many parseLanguagePragma
       modName <- parseModuleHeader <|> return "Main"
       _ <- optional $ satisfy "virtual brace" $ \case ITvocurly -> Just (); _ -> Nothing
+      skipMany comment
       imports <- many parseImport
       return ScannedData
         { moduleName = modName
