@@ -5,7 +5,7 @@ rules from `haskell_library`, `haskell_binary`, and `haskell_test` as
 defined in [Haskell rules][rules_haskell] for [Bazel][bazel].
 
 For each `haskell_library` rule, `haskell_module` rules are generated
-in the same `BUILD` for all modules listed in the `srcs` attribute.
+in the same `BUILD` file for all modules listed in the `srcs` attribute.
 
 This [example repo][example] shows it in action.
 
@@ -77,8 +77,10 @@ Build and run gazelle with
 bazel run //:gazelle
 ```
 
-Gazelle's [fix command][fix-command] can be used to delete rules when
-components are removed from the cabal file.
+Gazelle's [fix command][fix-command] can be used to delete
+`haskell_module` rules when they have no enclosing library, binary, or
+test. At the moment, the `fix` command only looks for enclosing
+rules in the same `BUILD` file containing the `haskell_module` rule.
 
 ## Rule generation
 
@@ -103,8 +105,8 @@ dependencies. Adding an import to a module that is defined in the current
 repo, will add that module to the dependencies if the importer and the
 imported come from the same library, binary, or test.
 
-If the origin of a `haskell_module` rule can't be determined, i.e. no
-library, binary, or test mentions the module, then it won't be updated.
+If no enclosing library, binary, or test can be found for a
+`haskell_module` rule, then it won't be updated.
 
 ## Implementation
 
@@ -186,7 +188,32 @@ generating rules or resolving imports.
 ### Package imports
 
 `gazelle_haskell_modules` ignores package imports as implemented in GHC
-with `-XPackageImports`.
+with `-XPackageImports`. If two modules with the same module name are
+available, `gazelle_haskell_modules` would currently complain of an
+ambiguity when resolving dependencies.
+
+### Detection of TemplateHaskell
+
+`gazelle_haskell_modules` detects modules that use `TemplateHaskell` by
+looking at the `LANGUAGE` pragmas and the `ghcopts` attribute of the
+`haskell_module` rule. But the internal or external interpreter could be
+activated by using `ANN` pragmas in the module source, or by using
+`-XTemplateHaskell` in the `ghcopts` attribute of the enclosing library.
+In these cases, `enable_th` won't be set on the `haskell_module` rule
+and complains about missing libraries or object files will ensue.
+
+To workaround this, you could set `enable_th = True` manually on
+the `haskell_module` rule and use a `#keep` comment.
+
+```
+haskell_module(
+	name = "...",
+	...
+	#keep
+	enable_th = True,
+	...
+)
+```
 
 ## What's next
 
@@ -233,7 +260,7 @@ Have questions? Need help? Tweet at
 
 [bazel]: https://bazel.build
 [himportscan]: himportscan/exe/Main.hs
-[gazelle_haskell_module_dependencies]: defs.bzl
+[gazelle_haskell_modules_dependencies]: defs.bzl
 [example]: example
 [fix-command]: https://github.com/bazelbuild/bazel-gazelle#fix-and-update
 [gazelle]: https://github.com/bazelbuild/bazel-gazelle
