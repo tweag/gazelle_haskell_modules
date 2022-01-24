@@ -4,15 +4,9 @@ package gazelle_haskell_modules
 import (
 	"fmt"
 
-	//"github.com/bazelbuild/buildtools/build"
-	//"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
-	//"github.com/bazelbuild/bazel-gazelle/language"
-	//golang "github.com/bazelbuild/bazel-gazelle/language/go"
-	//"github.com/bazelbuild/bazel-gazelle/language/proto"
 	"github.com/bazelbuild/bazel-gazelle/resolve"
 	"github.com/bazelbuild/bazel-gazelle/rule"
-	//"github.com/bazelbuild/bazel-gazelle/walk"
 
 	"log"
 	"path/filepath"
