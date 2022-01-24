@@ -215,36 +215,6 @@ haskell_module(
 )
 ```
 
-## What's next
-
-- [X] Have `haskell_module` rules depend on each other.
-- [X] Investigate how to index external repositories, which would be needed
-  to recognize the provenance of modules coming from external dependencies.
-- [X] Have Haskell rules depend on `haskell_module` rules
-- [X] Copy `extra_srcs` from the originating rule
-- [X] Copy `tools` from the originating rule
-- [X] Copy `plugins` from the originating rule
-- [X] Skip CPP directives when scanning for imports
-- [X] Have a story for preprocessed modules like those needing tasty-discover
-- [X] Update `haskell_module` rules when imports change
-- [X] Solve interferences with `gazelle_cabal` (removes keep comments on srcs, libsodium label is not understood, deps attribute is reset)
-- [X] Lift restriction to name only `haskell_module` rules with dots.
-- [X] Lift restriction to name custom `haskell_module` rules as `<package>.<module>`
-- [X] Propagate compiler flags and other attributes of libraries, tests, and binaries, to `haskell_module` rules listed in the dependencies.
-- [X] Use the `modules` attribute of `haskell_library` instead of `deps`
-- [X] Address feedback from code review session.
-- [X] Implement gazelle directive to erase library boundaries
-- [X] Implement gazelle\_haskell\_modules:keep
-- [ ] Check if linker options need special treatment
-- [ ] Copy `data` from the originating rule (?)
-- [X] Document how `gazelle_haskell_modules` works
-- [X] Support the fix command to remove outdated `haskell_module` rules
-- [X] See whether we can run `gazelle_haskell_modules` and `gazelle_cabal` in one pass
-- [ ] Implement tests
-- [ ] Setup CI
-- [X] Have himportscan support lhs files
-- [ ] Move the update-repos feature of gazelle\_cabal to gazelle\_haskell\_modules
-
 ## Sponsors
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
