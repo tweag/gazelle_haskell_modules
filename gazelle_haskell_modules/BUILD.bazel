@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gazelle_haskell_modules",
@@ -14,12 +14,9 @@ go_library(
         "@bazel_gazelle//config:go_default_library",
         "@bazel_gazelle//label:go_default_library",
         "@bazel_gazelle//language:go_default_library",
-        "@bazel_gazelle//language/go:go_default_library",
-        "@bazel_gazelle//language/proto:go_default_library",
         "@bazel_gazelle//repo:go_default_library",
         "@bazel_gazelle//resolve:go_default_library",
         "@bazel_gazelle//rule:go_default_library",
-        "@bazel_gazelle//walk:go_default_library",
         "@com_github_bazelbuild_buildtools//build:go_default_library",
         "@io_bazel_rules_go//go/tools/bazel:go_default_library",
     ],
