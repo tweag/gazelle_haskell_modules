@@ -4,6 +4,7 @@ exports_files(["defs.bzl"])
 
 buildifier(
     name = "buildifier-diff",
+    diff_command = "diff -u",
     mode = "diff",
 )
 

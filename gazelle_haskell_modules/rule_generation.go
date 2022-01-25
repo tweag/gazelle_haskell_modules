@@ -48,7 +48,7 @@ func nonHaskellModuleRulesToRuleInfos(
 		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) {
 			continue
 		}
-		srcs, err := srcsFromRuleExceptKeep(pkgRoot, r.Attr("srcs"))
+		srcs, err := srcsFromRule(pkgRoot, r.Attr("srcs"))
 		handleRuleError(err, r, "srcs")
 
 		modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
@@ -196,7 +196,7 @@ func addNonHaskellModuleRules(
 				}
 			}
 
-			srcs, err := srcsFromRuleExceptKeep(pkgRoot, r.Attr("srcs"))
+			srcs, err := srcsFromRule(pkgRoot, r.Attr("srcs"))
 			handleRuleError(err, r, "srcs")
 			modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
 			handleRuleError(err, r, "modules")
@@ -253,17 +253,9 @@ func concatRuleInfos(xs [][]*RuleInfo) []*RuleInfo {
 	return ys
 }
 
-func NotShouldKeep(expr build.Expr) bool {
-	return !rule.ShouldKeep(expr)
-}
-
-func ConstTrue(expr build.Expr) bool {
-	return true
-}
-
 // Collects the source files referenced in the given expression
-func srcsFromRuleExceptKeep(pkgRoot string, expr build.Expr) ([]string, error) {
-	srcs, err := getSources(expr, NotShouldKeep)
+func srcsFromRule(pkgRoot string, expr build.Expr) ([]string, error) {
+	srcs, err := getSources(expr)
 	if err != nil {
 		return nil, err
 	}
@@ -358,8 +350,8 @@ func ParseLabel(v string) (label.Label, error) {
 	return label.Parse(v)
 }
 
-func getSources(expr build.Expr, p func(build.Expr) bool) (map[string]bool, error) {
-	xs, err := getStringListP(expr, p)
+func getSources(expr build.Expr) (map[string]bool, error) {
+	xs, err := getStringList(expr)
 	if err != nil {
 		return nil, err
 	}
@@ -374,9 +366,7 @@ func getSources(expr build.Expr, p func(build.Expr) bool) (map[string]bool, erro
 // but yields an empty list if the attribute isn't set, and
 // gives an error if the attribute is set to something that
 // isn't a list.
-//
-// Yields only the values satisfying the given predicate.
-func getStringListP(expr build.Expr, p func(build.Expr) bool) ([]string, error) {
+func getStringList(expr build.Expr) ([]string, error) {
 	switch expr.(type) {
 	case nil:
 		return []string{}, nil
@@ -387,9 +377,7 @@ func getStringListP(expr build.Expr, p func(build.Expr) bool) ([]string, error) 
 			switch e.(type) {
 			case *build.StringExpr:
 				estr := e.(*build.StringExpr)
-				if p(estr) {
-					xs = append(xs, estr.Value)
-				}
+				xs = append(xs, estr.Value)
 			default:
 				return nil, fmt.Errorf("Unhandled expression type %T (expected a string)", e)
 			}
@@ -398,10 +386,6 @@ func getStringListP(expr build.Expr, p func(build.Expr) bool) ([]string, error) 
 	default:
 		return nil, fmt.Errorf("Unhandled expression type %T (expected a list)", expr)
 	}
-}
-
-func getStringList(expr build.Expr) ([]string, error) {
-	return getStringListP(expr, ConstTrue)
 }
 
 func isNonHaskellModule(kind string) bool {
