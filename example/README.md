@@ -11,7 +11,6 @@ and `example/package-b/BUILD.bazel`.
 
 Now you should be able to build and test with
 ```bazel
-nix-shell --pure --run "bazel build //..."
 nix-shell --pure --run "bazel test //..."
 ```
 
