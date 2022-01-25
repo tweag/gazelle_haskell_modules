@@ -1,5 +1,7 @@
 # gazelle\_haskell\_modules
 
+![Build status](https://github.com/tweag/gazelle_haskell_modules/actions/workflows/workflow.yaml/badge.svg?branch=main)
+
 This is a [gazelle][gazelle] extension that generates `haskell_module`
 rules from `haskell_library`, `haskell_binary`, and `haskell_test` as
 defined in [Haskell rules][rules_haskell] for [Bazel][bazel].
