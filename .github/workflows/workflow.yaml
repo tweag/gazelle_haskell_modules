@@ -35,9 +35,12 @@ jobs:
           build --repository_cache=~/repo-cache/
           EOF
           ln -s ../.bazelrc.local example/.bazelrc.local
+          ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
       - name: Build & run gazelle
         run: cd example; nix-shell --pure --run 'bazel run //:gazelle'
       - name: Build & test generated rules
         run: cd example; nix-shell --pure --run 'bazel test //...'
+      - name: Build & run gazelle with alternative dependencies
+        run: cd tests/alternative-deps; nix-shell --pure --run 'bazel run //:gazelle'
       - name: Test for buildifier suggestions
         run: nix-shell --pure --run 'bazel run //:buildifier-diff'
