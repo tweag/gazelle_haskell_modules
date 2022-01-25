@@ -64,3 +64,6 @@ haskell_module(
     name = "non-enclosed-module",
     src = "app/Main.hs",
 )
+
+sh_test(name = "test-a-haskell-binary", srcs = [":a-haskell-binary"])
+sh_test(name = "test-another-haskell-binary", srcs = [":another-haskell-binary"])
