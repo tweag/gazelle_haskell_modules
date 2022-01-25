@@ -12,6 +12,7 @@ mkShell {
     bazel_4
     binutils
     cacert
+    diffutils # for buildifier-diff
     git
     nix
     openjdk11
