@@ -35,14 +35,7 @@ jobs:
           build --repository_cache=~/repo-cache/
           EOF
           ln -s ../.bazelrc.local example/.bazelrc.local
-      - name: Build & test
-        run: |
-          nix-shell --pure --run '
-            set -euo pipefail
-            cd example
-            bazel run //:gazelle
-            bazel build //...
-            bazel test //...
-            bazel run //package-a:a-haskell-binary
-            bazel run //package-a:another-haskell-binary
-            '
+      - name: Build & run gazelle
+        run: cd example; nix-shell --pure --run 'bazel run //:gazelle'
+      - name: Build & test generated rules
+        run: cd example; nix-shell --pure --run 'bazel test //...'
