@@ -1,6 +1,11 @@
-workspace(name = "io_tweag_gazelle_haskell_modules")
+workspace(name = "gazelle_haskell_modules_example")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+local_repository(
+    name = "io_tweag_gazelle_haskell_modules",
+    path = "../..",
+)
 
 ##########################
 # rules_haskell preamble
@@ -38,7 +43,19 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_dependencies")
 
-gazelle_haskell_modules_dependencies()
+gazelle_haskell_modules_dependencies(
+    aeson = "@stackage-b//:aeson",
+    parsec = "@stackage-b//:parsec",
+)
+
+stack_snapshot(
+    name = "stackage-b",
+    packages = [
+        "aeson",
+        "parsec",
+    ],
+    snapshot = "lts-18.1",
+)
 
 stack_snapshot(
     name = "stackage",
@@ -49,14 +66,12 @@ stack_snapshot(
         ],
     },
     packages = [
-        "aeson",
-        "hspec",
-        "parsec",
-        "path",
-        "path-io",
+        "base",
+        "inspection-testing",
         "tasty",
         "tasty-discover",
-        "tasty-hspec",
+        "tasty-hunit",
+        "void",
     ],
     snapshot = "lts-18.1",
 )
@@ -116,14 +131,3 @@ http_archive(
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
 gazelle_dependencies()
-
-#######################
-# Buildifier preamble
-#######################
-
-http_archive(
-    name = "com_github_bazelbuild_buildtools",
-    sha256 = "5b7fe9aa131ab64a51de4da3668005cf58418c967438ce129aad24fd3e6dfaa9",
-    strip_prefix = "buildtools-4890966c38b910fd5bd1ad78a3dd88538d09854f",
-    url = "https://github.com/bazelbuild/buildtools/archive/4890966c38b910fd5bd1ad78a3dd88538d09854f.zip",
-)

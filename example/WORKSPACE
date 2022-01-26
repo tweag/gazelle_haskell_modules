@@ -77,7 +77,7 @@ haskell_register_ghc_nixpkgs(
         "-Wincomplete-record-updates",
         "-Wredundant-constraints",
     ],
-    repositories = {"nixpkgs": "@nixpkgs"},
+    repository = "@nixpkgs",
     version = "8.10.7",
 )
 

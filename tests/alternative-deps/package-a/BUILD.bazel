@@ -1,0 +1,76 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary")
+
+# a-haskell-binary and another-haskell-binary use the same files
+#
+# We test here that different haskell_module rules are generated
+# to build the files for each binary.
+haskell_binary(
+    name = "a-haskell-binary",
+    srcs = [
+        "app/Main.hs",
+        "app/PackageA/Other/C.hs",
+    ],
+    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":package-a",
+        "@stackage//:base",
+    ],
+)
+
+haskell_binary(
+    name = "another-haskell-binary",
+    srcs = [
+        "app/Main.hs",
+        "app/PackageA/Other/C.hs",
+    ],
+    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":package-a",
+        "@stackage//:base",
+    ],
+)
+
+haskell_library(
+    name = "package-a",
+    srcs = [
+        "src/PackageA/Exposed/A.hs",
+        "src/PackageA/Other/B.hs",
+        "src/PackageA/Other/D.lhs",
+    ],
+    compiler_flags = [
+        "-DVERSION_package_a=\"0.1.0.0\"",
+        "-Wall",
+        "-Werror",
+        "-Wno-orphans",
+        "-lm",
+    ],
+    hidden_modules = [
+        "PackageA.Other.B",
+        "PackageA.Other.D",
+    ],
+    plugins = ["//:inspection-testing-plugin"],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@stackage//:base",
+    ],
+)
+
+haskell_module(
+    name = "non-enclosed-module",
+    src = "app/Main.hs",
+)
+
+sh_test(
+    name = "test-a-haskell-binary",
+    srcs = [":a-haskell-binary"],
+)
+
+sh_test(
+    name = "test-another-haskell-binary",
+    srcs = [":another-haskell-binary"],
+)

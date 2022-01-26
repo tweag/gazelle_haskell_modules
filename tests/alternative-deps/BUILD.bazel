@@ -1,0 +1,24 @@
+load(
+    "@bazel_gazelle//:def.bzl",
+    "DEFAULT_LANGUAGES",
+    "gazelle",
+    "gazelle_binary",
+)
+load("@rules_haskell//haskell:defs.bzl", "ghc_plugin")
+
+gazelle(
+    name = "gazelle",
+    gazelle = ":gazelle_binary",
+)
+
+gazelle_binary(
+    name = "gazelle_binary",
+    languages = DEFAULT_LANGUAGES + ["@io_tweag_gazelle_haskell_modules//gazelle_haskell_modules"],
+)
+
+ghc_plugin(
+    name = "inspection-testing-plugin",
+    module = "Test.Inspection.Plugin",
+    visibility = ["//:__subpackages__"],
+    deps = ["@stackage//:inspection-testing"],
+)
