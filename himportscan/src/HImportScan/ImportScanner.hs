@@ -11,8 +11,10 @@
 module HImportScan.ImportScanner
   ( ScannedImports
   , scanImports
+  , scanImportsFromFile
   ) where
 
+import Control.Exception (evaluate)
 import Control.Monad (void)
 import qualified Data.Aeson as Aeson
 import Data.Char (isAlphaNum, isSpace, toLower)
@@ -50,15 +52,18 @@ instance Aeson.ToJSON ScannedImports where
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
 -- all of the import declarations.
-scanImports :: FilePath -> IO ScannedImports
-scanImports filePath = withFile filePath ReadMode $ \h -> do
-  contents <- hGetContents h
+scanImportsFromFile :: FilePath -> IO ScannedImports
+scanImportsFromFile filePath = withFile filePath ReadMode $ \h ->
+  (scanImports filePath <$> hGetContents h) >>= evaluate
+
+scanImports :: FilePath -> String -> ScannedImports
+scanImports filePath contents =
   let sbuffer = stringToStringBuffer (preprocessContents contents)
       loc = mkRealSrcLoc (mkFastString filePath) 1 1
-  case scanTokenStream filePath $ lexTokenStream sbuffer loc of
+   in case scanTokenStream filePath $ lexTokenStream sbuffer loc of
     Left err -> error err
     Right ScannedData{moduleName, importedModules, usesTH} ->
-      return ScannedImports
+      ScannedImports
         { filePath = Text.pack filePath
         , moduleName
         , importedModules
