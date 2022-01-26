@@ -62,11 +62,10 @@ haskell_test(
     ],
     deps = [
         ":base",
-        ":cabalscan-library",
+        ":himportscan-library",
         ":text",
         "@stackage//:hspec",
-        "@stackage//:path",
-        "@stackage//:path-io",
+        "@stackage//:string-qq",
         "@stackage//:tasty",
         "@stackage//:tasty-hspec",
     ],

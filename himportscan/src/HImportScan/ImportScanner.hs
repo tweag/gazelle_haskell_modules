@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeApplications #-}
 
 module HImportScan.ImportScanner
-  ( ScannedImports
+  ( ScannedImports(..)
   , scanImports
   , scanImportsFromFile
   ) where
@@ -39,6 +39,7 @@ data ScannedImports = ScannedImports
   , importedModules :: [Text] -- ^ The modules imported in this module
   , usesTH :: Bool  -- ^ Whether the module needs TH or the interpreter
   }
+  deriving Eq
 
 instance Aeson.ToJSON ScannedImports where
   toJSON (ScannedImports filePath moduleName importedModules usesTH) =
