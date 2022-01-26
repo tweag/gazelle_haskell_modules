@@ -5,7 +5,6 @@ Run the following to generate the build configuration from the BUILD files.
 ```bazel
 echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" > .bazelrc.local
 nix-shell --pure --run "bazel run //:gazelle"
-nix-shell --pure --run "bazel run //:gazelle-update-repos"
 ```
 Now you can build and test with
 ```bazel
