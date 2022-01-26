@@ -14,20 +14,19 @@ module HImportScan.ImportScanner
   , scanImportsFromFile
   ) where
 
-import Control.Exception (evaluate)
 import Control.Monad (void)
 import qualified Data.Aeson as Aeson
 import Data.Char (isAlphaNum, isSpace, toLower)
 import Data.List (isSuffixOf, nub)
 import Data.Text (Text)
 import qualified Data.Text as Text
+import qualified Data.Text.IO as Text
 import EnumSet
 import FastString
 import Lexer hiding (lexTokenStream)
 import SrcLoc
 import StringBuffer
 
-import System.IO (IOMode(ReadMode), hGetContents, withFile)
 import Text.Parsec hiding (satisfy)
 import Text.Parsec.Pos (newPos)
 
@@ -54,12 +53,11 @@ instance Aeson.ToJSON ScannedImports where
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
 -- all of the import declarations.
 scanImportsFromFile :: FilePath -> IO ScannedImports
-scanImportsFromFile filePath = withFile filePath ReadMode $ \h ->
-  (scanImports filePath <$> hGetContents h) >>= evaluate
+scanImportsFromFile filePath = scanImports filePath <$> Text.readFile filePath
 
-scanImports :: FilePath -> String -> ScannedImports
+scanImports :: FilePath -> Text -> ScannedImports
 scanImports filePath contents =
-  let sbuffer = stringToStringBuffer (preprocessContents contents)
+  let sbuffer = stringToStringBuffer (Text.unpack $ preprocessContents contents)
       loc = mkRealSrcLoc (mkFastString filePath) 1 1
    in case scanTokenStream filePath $ lexTokenStream sbuffer loc of
     Left err -> error err
@@ -72,7 +70,7 @@ scanImports filePath contents =
         }
 
   where
-    preprocessContents = unlines . flipBirdTracks filePath . clearCPPDirectives . lines
+    preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
 
 -- | Clear CPP directives since they would otherwise confuse the scanner.
 --
@@ -81,9 +79,9 @@ scanImports filePath contents =
 --
 -- Honours multiline directives (\-terminated) too
 --
-clearCPPDirectives :: [String] -> [String]
+clearCPPDirectives :: [Text] -> [Text]
 clearCPPDirectives = \case
-  xs@(('#' : _) : _) ->
+  xs@(t : _) | Text.isPrefixOf "#" t ->
     let (nlines, rest) = dropDirectiveLines xs
      in replicate nlines "" ++ clearCPPDirectives rest
   (xs : xss) -> xs : clearCPPDirectives xss
@@ -93,19 +91,18 @@ clearCPPDirectives = \case
       let (directive, rest) = span endsWithBackslash xs
        in (length directive + 1, drop 1 rest)
 
-    endsWithBackslash [] = False
-    endsWithBackslash xs = last xs == '\\'
+    endsWithBackslash = Text.isSuffixOf "\\"
 
 -- | The start of bird tracks are replaced with spaces, and the
 -- comment lines are replaced with empty lines as long as the given
 -- file has .lhs extension.
-flipBirdTracks :: FilePath -> [String] -> [String]
+flipBirdTracks :: FilePath -> [Text] -> [Text]
 flipBirdTracks f =
     if isSuffixOf ".lhs" (map toLower f) then map flipBirdTrack
       else id
   where
-    flipBirdTrack :: String -> String
-    flipBirdTrack ('>' : xs) = ' ' : xs
+    flipBirdTrack :: Text -> Text
+    flipBirdTrack xs | Text.isPrefixOf ">" xs = " " <> Text.drop 1 xs
     flipBirdTrack _ = " "
 
 data ScannedData = ScannedData

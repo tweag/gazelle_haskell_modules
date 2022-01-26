@@ -49,7 +49,7 @@ testSource = testSourceWithFile "dummy.hs"
 
 testSourceWithFile :: FilePath -> Text -> [Text] -> Bool -> Text -> IO ()
 testSourceWithFile file moduleName importedModules usesTH contents = do
-    NicelyPrinted (scanImports file (Text.unpack $ stripIndentation contents))
+    NicelyPrinted (scanImports file $ stripIndentation contents)
       `shouldBe` NicelyPrinted ScannedImports
         { filePath = Text.pack file
         , moduleName
