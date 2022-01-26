@@ -36,6 +36,8 @@ jobs:
           EOF
           ln -s ../.bazelrc.local example/.bazelrc.local
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
+      - name: Build & test himportscan
+        run: nix-shell --pure --run 'bazel test //himportscan:tasty'
       - name: Build & run gazelle
         run: cd example; nix-shell --pure --run 'bazel run //:gazelle'
       - name: Build & test generated rules
