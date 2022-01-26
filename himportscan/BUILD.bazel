@@ -25,6 +25,7 @@ haskell_library(
     ],
     deps = [
         ":base",
+        ":bytestring",
         ":ghc",
         ":text",
         "@io_tweag_gazelle_haskell_modules_deps//:aeson",

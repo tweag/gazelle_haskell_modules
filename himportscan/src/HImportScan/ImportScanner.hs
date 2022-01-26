@@ -16,11 +16,13 @@ module HImportScan.ImportScanner
 
 import Control.Monad (void)
 import qualified Data.Aeson as Aeson
+import Data.ByteString.Internal(ByteString(..))
 import Data.Char (isAlphaNum, isSpace, toLower)
 import Data.List (isSuffixOf, nub)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
+import qualified Data.Text.Encoding as Text
 import EnumSet
 import FastString
 import Lexer hiding (lexTokenStream)
@@ -57,7 +59,9 @@ scanImportsFromFile filePath = scanImports filePath <$> Text.readFile filePath
 
 scanImports :: FilePath -> Text -> ScannedImports
 scanImports filePath contents =
-  let sbuffer = stringToStringBuffer (Text.unpack $ preprocessContents contents)
+  let preprocessedContents = Text.encodeUtf8 $ preprocessContents contents
+      sbuffer = case preprocessedContents of
+        PS ptr offset len -> StringBuffer ptr len offset
       loc = mkRealSrcLoc (mkFastString filePath) 1 1
    in case scanTokenStream filePath $ lexTokenStream sbuffer loc of
     Left err -> error err
