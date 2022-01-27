@@ -23,11 +23,11 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Data.Text.Encoding as Text
-import EnumSet
-import FastString
-import Lexer hiding (lexTokenStream)
-import SrcLoc
-import StringBuffer
+import EnumSet (empty, fromList)
+import FastString (mkFastString, unpackFS)
+import Lexer (ParseResult(..), Token(..), lexer, loc, mkParserFlags', mkPStatePure, unP)
+import SrcLoc (GenLocated(L), Located, RealSrcLoc, SrcLoc(RealSrcLoc), getLoc, mkRealSrcLoc, srcLocLine, srcLocCol, srcSpanStart, unLoc)
+import StringBuffer (StringBuffer(StringBuffer))
 
 import Text.Parsec hiding (satisfy)
 import Text.Parsec.Pos (newPos)
