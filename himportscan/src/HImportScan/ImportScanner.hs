@@ -7,25 +7,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module HImportScan.ImportScanner
-  ( ScannedImports
+  ( ScannedImports(..)
   , scanImports
+  , scanImportsFromFile
   ) where
 
 import Control.Monad (void)
 import qualified Data.Aeson as Aeson
+import Data.ByteString.Internal(ByteString(..))
 import Data.Char (isAlphaNum, isSpace, toLower)
 import Data.List (isSuffixOf, nub)
 import Data.Text (Text)
 import qualified Data.Text as Text
-import EnumSet
-import FastString
-import Lexer hiding (lexTokenStream)
-import SrcLoc
-import StringBuffer
-
-import System.IO (IOMode(ReadMode), hGetContents, withFile)
+import qualified Data.Text.IO as Text
+import qualified Data.Text.Encoding as Text
+import HImportScan.GHC as GHC
 import Text.Parsec hiding (satisfy)
 import Text.Parsec.Pos (newPos)
 
@@ -37,6 +36,7 @@ data ScannedImports = ScannedImports
   , importedModules :: [Text] -- ^ The modules imported in this module
   , usesTH :: Bool  -- ^ Whether the module needs TH or the interpreter
   }
+  deriving Eq
 
 instance Aeson.ToJSON ScannedImports where
   toJSON (ScannedImports filePath moduleName importedModules usesTH) =
@@ -50,15 +50,19 @@ instance Aeson.ToJSON ScannedImports where
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
 -- all of the import declarations.
-scanImports :: FilePath -> IO ScannedImports
-scanImports filePath = withFile filePath ReadMode $ \h -> do
-  contents <- hGetContents h
-  let sbuffer = stringToStringBuffer (preprocessContents contents)
+scanImportsFromFile :: FilePath -> IO ScannedImports
+scanImportsFromFile filePath = scanImports filePath <$> Text.readFile filePath
+
+scanImports :: FilePath -> Text -> ScannedImports
+scanImports filePath contents =
+  let preprocessedContents = Text.encodeUtf8 $ preprocessContents contents
+      sbuffer = case preprocessedContents of
+        PS ptr offset len -> StringBuffer ptr len offset
       loc = mkRealSrcLoc (mkFastString filePath) 1 1
-  case scanTokenStream filePath $ lexTokenStream sbuffer loc of
+   in case scanTokenStream filePath $ lexTokenStream sbuffer loc of
     Left err -> error err
     Right ScannedData{moduleName, importedModules, usesTH} ->
-      return ScannedImports
+      ScannedImports
         { filePath = Text.pack filePath
         , moduleName
         , importedModules
@@ -66,7 +70,7 @@ scanImports filePath = withFile filePath ReadMode $ \h -> do
         }
 
   where
-    preprocessContents = unlines . flipBirdTracks filePath . clearCPPDirectives . lines
+    preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
 
 -- | Clear CPP directives since they would otherwise confuse the scanner.
 --
@@ -75,9 +79,9 @@ scanImports filePath = withFile filePath ReadMode $ \h -> do
 --
 -- Honours multiline directives (\-terminated) too
 --
-clearCPPDirectives :: [String] -> [String]
+clearCPPDirectives :: [Text] -> [Text]
 clearCPPDirectives = \case
-  xs@(('#' : _) : _) ->
+  xs@(t : _) | Text.isPrefixOf "#" t ->
     let (nlines, rest) = dropDirectiveLines xs
      in replicate nlines "" ++ clearCPPDirectives rest
   (xs : xss) -> xs : clearCPPDirectives xss
@@ -87,19 +91,18 @@ clearCPPDirectives = \case
       let (directive, rest) = span endsWithBackslash xs
        in (length directive + 1, drop 1 rest)
 
-    endsWithBackslash [] = False
-    endsWithBackslash xs = last xs == '\\'
+    endsWithBackslash = Text.isSuffixOf "\\"
 
 -- | The start of bird tracks are replaced with spaces, and the
 -- comment lines are replaced with empty lines as long as the given
 -- file has .lhs extension.
-flipBirdTracks :: FilePath -> [String] -> [String]
+flipBirdTracks :: FilePath -> [Text] -> [Text]
 flipBirdTracks f =
     if isSuffixOf ".lhs" (map toLower f) then map flipBirdTrack
       else id
   where
-    flipBirdTrack :: String -> String
-    flipBirdTrack ('>' : xs) = ' ' : xs
+    flipBirdTrack :: Text -> Text
+    flipBirdTrack xs | Text.isPrefixOf ">" xs = " " <> Text.drop 1 xs
     flipBirdTrack _ = " "
 
 data ScannedData = ScannedData
@@ -217,8 +220,8 @@ lexTokenStream :: StringBuffer -> RealSrcLoc -> [Located Token]
 lexTokenStream buf loc =
   let allExtensions = [minBound..maxBound]
       parserFlags = mkParserFlags'
-        EnumSet.empty
-        (EnumSet.fromList allExtensions)
+        GHC.empty
+        (GHC.fromList allExtensions)
         (error "lexTokenStreamUnitId")
         False
         False
@@ -228,6 +231,6 @@ lexTokenStream buf loc =
    in go initState
   where
     go st = case unP (lexer False return) st of
-      POk _st' (L _ ITeof) -> []
+      POk _st' (unLoc -> ITeof) -> []
       POk st' tok -> tok : go st'
-      PFailed st' -> error $ "Lexer error at " ++ show (Lexer.loc st')
+      PFailed st' -> error $ "Lexer error at " ++ show (GHC.loc st')
