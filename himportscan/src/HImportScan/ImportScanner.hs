@@ -23,12 +23,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Data.Text.Encoding as Text
-import EnumSet (empty, fromList)
-import FastString (mkFastString, unpackFS)
-import Lexer (ParseResult(..), Token(..), lexer, loc, mkParserFlags', mkPStatePure, unP)
-import SrcLoc (GenLocated(L), Located, RealSrcLoc, SrcLoc(RealSrcLoc), getLoc, mkRealSrcLoc, srcLocLine, srcLocCol, srcSpanStart, unLoc)
-import StringBuffer (StringBuffer(StringBuffer))
-
+import HImportScan.GHC as GHC
 import Text.Parsec hiding (satisfy)
 import Text.Parsec.Pos (newPos)
 
@@ -224,8 +219,8 @@ lexTokenStream :: StringBuffer -> RealSrcLoc -> [Located Token]
 lexTokenStream buf loc =
   let allExtensions = [minBound..maxBound]
       parserFlags = mkParserFlags'
-        EnumSet.empty
-        (EnumSet.fromList allExtensions)
+        GHC.empty
+        (GHC.fromList allExtensions)
         (error "lexTokenStreamUnitId")
         False
         False
@@ -237,4 +232,4 @@ lexTokenStream buf loc =
     go st = case unP (lexer False return) st of
       POk _st' (L _ ITeof) -> []
       POk st' tok -> tok : go st'
-      PFailed st' -> error $ "Lexer error at " ++ show (Lexer.loc st')
+      PFailed st' -> error $ "Lexer error at " ++ show (GHC.loc st')
