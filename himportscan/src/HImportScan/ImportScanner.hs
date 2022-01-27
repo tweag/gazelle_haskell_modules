@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module HImportScan.ImportScanner
   ( ScannedImports(..)
@@ -230,6 +231,6 @@ lexTokenStream buf loc =
    in go initState
   where
     go st = case unP (lexer False return) st of
-      POk _st' (L _ ITeof) -> []
+      POk _st' (unLoc -> ITeof) -> []
       POk st' tok -> tok : go st'
       PFailed st' -> error $ "Lexer error at " ++ show (GHC.loc st')

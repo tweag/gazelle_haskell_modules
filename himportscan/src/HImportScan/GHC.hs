@@ -12,8 +12,7 @@ import Lexer as X
   , mkPStatePure, unP
   )
 import SrcLoc as X
-  ( GenLocated(L)
-  , Located
+  ( Located
   , RealSrcLoc
   , SrcLoc(RealSrcLoc)
   , getLoc
