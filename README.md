@@ -4,16 +4,51 @@
 
 This is a [gazelle][gazelle] extension that generates `haskell_module`
 rules from `haskell_library`, `haskell_binary`, and `haskell_test` as
-defined in [Haskell rules][rules_haskell] for [Bazel][bazel].
+defined in [Haskell rules][rules_haskell] for [Bazel][bazel]. Moreover,
+it updates the dependencies of the generated rules whenever the import
+declarions are changed in the source files.
 
-For each `haskell_library` rule, `haskell_module` rules are generated
-in the same `BUILD` file for all modules listed in the `srcs` attribute.
+For each `haskell_library`, `haskell_binary`, and `haskell_test` rule,
+`haskell_module` rules are generated in the same `BUILD` file for all
+modules listed in the `srcs` attribute. For instance,
+```python
+haskell_library(
+    name = "lib",
+    srcs = [
+        "src/A/B.hs",
+        "src/C/D.hs",
+    ],
+    deps = [":base"],
+    ghcopts = ["-threaded"],
+)
+```
+is updated to
+```python
+haskell_library(
+    name = "lib",
+    modules = [
+        "lib.A.B",
+        "lib.C.D",
+    ],
+    deps = [":base"],
+    ghcopts = ["-threaded"],
+)
 
-This [example repo][example] shows it in action.
+haskell_module(
+    name = "lib.A.B",
+    src = "src/A/B.hs",
+    src_strip_prefix = "src",
+    deps = ["lib.C.D"],
+)
 
-Right now, this is work in progress. The features that are implemented
-include a scanner of imports in Haskell modules, and the generation of
-some `haskell_module` rules. See the **What's next** section below.
+haskell_module(
+    name = "lib.C.D",
+    src = "src/C/D.hs",
+    src_strip_prefix = "src",
+)
+```
+
+This [example project][example] shows it in action.
 
 ## Configuration
 
