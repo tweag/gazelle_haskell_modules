@@ -131,7 +131,13 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			libraryDepLabels = libraryDeps.(map[label.Label]bool)
 		}
 
-		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels) + len(libraryDepLabels) + 1)
+		var usesModules int
+		if shouldModularize(r) {
+			usesModules = 1
+		} else {
+			usesModules = 0
+		}
+		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels) + len(libraryDepLabels) + usesModules)
 		i := 0
 		for moduleLabel := range moduleLabels {
 			moduleSpecs[i] = libraryOfModuleSpec(moduleLabel)
@@ -142,7 +148,9 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			moduleSpecs[len(moduleLabels) + i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
 			i++
 		}
-		moduleSpecs[len(moduleSpecs) - 1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
+		if usesModules > 0 {
+			moduleSpecs[len(moduleSpecs) - 1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
+		}
 		return moduleSpecs
 	} else {
 		return []resolve.ImportSpec{}
