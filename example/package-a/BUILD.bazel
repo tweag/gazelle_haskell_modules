@@ -15,6 +15,7 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":package-a",
+        ":nonmoduleslib",
         "@stackage//:base",
     ],
 )
@@ -30,6 +31,21 @@ haskell_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":package-a",
+        ":nonmoduleslib",
+        "@stackage//:base",
+    ],
+)
+
+# test that nonmoduleslib isn't used in narrowed_deps of a
+# haskell_binary rules when it is marked with a keep comment.
+
+# gazelle_haskell_modules:keep
+haskell_library(
+    name = "nonmoduleslib",
+    srcs = [
+        "nonmoduleslib/NonModulesLib.hs",
+    ],
+    deps = [
         "@stackage//:base",
     ],
 )
