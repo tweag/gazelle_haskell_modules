@@ -92,7 +92,7 @@ func setHaskellModuleDeps(
 			deps = append(deps, rel(*dep, from).String())
 			continue
 		}
-		
+
 		dep, err = findCrossLibraryModuleLabelByModuleName(ix, mod, originalLibs)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)

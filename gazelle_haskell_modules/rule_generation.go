@@ -7,7 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
-    "github.com/bazelbuild/buildtools/build"
+	"github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/bazel-gazelle/label"
 	"github.com/bazelbuild/bazel-gazelle/language"
 	"github.com/bazelbuild/bazel-gazelle/rule"
@@ -319,7 +319,7 @@ type HRuleImportData struct {
 func getLabelsFromListExpr(expr build.Expr) (map[label.Label]bool, error) {
 	switch expr.(type) {
 	case nil:
-        return map[label.Label]bool{}, nil
+		return map[label.Label]bool{}, nil
 	case *build.ListExpr:
 		exprList := expr.(*build.ListExpr).List
 		xs := make(map[label.Label]bool, len(exprList))
@@ -333,12 +333,12 @@ func getLabelsFromListExpr(expr build.Expr) (map[label.Label]bool, error) {
 				xs[lbl] = true
 			default:
 				return nil, fmt.Errorf("Unhandled expression type %T (expected a string)", e)
-            }
-        }
-        return xs, nil
-    default:
-        return nil, fmt.Errorf("Unhandled expression type %T (expected a list)", expr)
-    }
+			}
+		}
+		return xs, nil
+	default:
+		return nil, fmt.Errorf("Unhandled expression type %T (expected a list)", expr)
+	}
 }
 
 // We use a patched parsing for labels, as the parser from gazelle can't understand
@@ -405,12 +405,12 @@ func isNonHaskellModule(kind string) bool {
 // srcStripPrefix("/a/B/C", "D.E") == "/a"
 //
 func srcStripPrefix(file, modName string) string {
-   numComponents := strings.Count(modName, ".") + 1
-   dir := file
-   for i := 0; i < numComponents; i++ {
-     dir = filepath.Dir(dir)
-   }
-   return dir
+	numComponents := strings.Count(modName, ".") + 1
+	dir := file
+	for i := 0; i < numComponents; i++ {
+		dir = filepath.Dir(dir)
+	}
+	return dir
 }
 
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
