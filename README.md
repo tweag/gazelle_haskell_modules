@@ -222,13 +222,6 @@ affect the dependencies of rules that depend on the Haskell library.
 `gazelle_haskell_modules` makes no effort to honor those attributes when
 generating rules or resolving imports.
 
-### Package imports
-
-`gazelle_haskell_modules` ignores package imports as implemented in GHC
-with `-XPackageImports`. If two modules with the same module name are
-available, `gazelle_haskell_modules` would currently complain of an
-ambiguity when resolving dependencies.
-
 ### Detection of TemplateHaskell
 
 `gazelle_haskell_modules` detects modules that use `TemplateHaskell` by

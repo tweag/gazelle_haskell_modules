@@ -134,8 +134,7 @@ func findModuleLabelByModuleName(
 	moduleId []string,
 	libs []label.Label,
 ) (*label.Label, error) {
-	moduleName := moduleId[len(moduleId)-1]
-	spec := moduleByNameSpec(moduleName)
+	spec := moduleByIdSpec(moduleId)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
@@ -143,7 +142,7 @@ func findModuleLabelByModuleName(
 		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
 		if len(intersection) > 0 {
 			if foundLabel.Name != "" {
-				return nil, fmt.Errorf("Multiple rules define %q in %v: %v and %v", moduleName, intersection, foundLabel, r.Label)
+				return nil, fmt.Errorf("Multiple rules define %v in %v: %v and %v", moduleId, intersection, foundLabel, r.Label)
 			} else {
 				foundLabel = r.Label
 			}
@@ -169,8 +168,7 @@ func findCrossLibraryModuleLabelByModuleName(
 	moduleId []string,
 	libs []label.Label,
 ) (*label.Label, error) {
-	moduleName := moduleId[len(moduleId)-1]
-	spec := moduleByNameSpec(moduleName)
+	spec := moduleByIdSpec(moduleId)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
@@ -184,8 +182,8 @@ func findCrossLibraryModuleLabelByModuleName(
 				for i, r1 := range res {
 					lbls[i] = r1.Label
 				}
-				return nil, fmt.Errorf("Multiple rules define %q in narrowed deps of %v and %v: %v and %v with narrowed_deps %v and %v",
-				              moduleName,
+				return nil, fmt.Errorf("Multiple rules define %v in narrowed deps of %v and %v: %v and %v with narrowed_deps %v and %v",
+							  moduleId,
 							  foundOriginalLibLabel,
 							  originalLib,
 							  foundLabel,
@@ -282,10 +280,20 @@ func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
 	}
 }
 
-func moduleByNameSpec(moduleName string) resolve.ImportSpec {
+func moduleByIdSpec(moduleId []string) resolve.ImportSpec {
+	var specString string
+	if len(moduleId)>1 {
+		specString = fmt.Sprintf("module_name:%s:%s", moduleId[0], moduleId[1])
+	} else {
+		specString = fmt.Sprintf("module_name:%s", moduleId[0])
+	}
+	return resolve.ImportSpec {gazelleHaskellModulesName, specString}
+}
+
+func moduleByPackageImportSpec(pkgName string, moduleName string) resolve.ImportSpec {
 	return resolve.ImportSpec {
 		gazelleHaskellModulesName,
-		fmt.Sprintf("module_name:%s", moduleName),
+		fmt.Sprintf("module_name:%s:%s", pkgName, moduleName),
 	}
 }
 

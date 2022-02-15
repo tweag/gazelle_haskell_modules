@@ -17,6 +17,7 @@ haskell_library(
     visibility = ["//visibility:public"],
     deps = [
         "//package-a",
+        "//package-a:package-a-v2",
         "@stackage//:base",
         "@stackage//:void",
     ],
