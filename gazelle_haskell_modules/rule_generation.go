@@ -296,7 +296,7 @@ func setVisibilities(f *rule.File, rules []*rule.Rule) {
 type ModuleData struct {
 	ModuleName string
 	FilePath  string
-	ImportedModules []string
+	ImportedModules [][]string
 	UsesTH bool
 }
 
@@ -306,7 +306,7 @@ type RuleInfo struct {
 }
 
 type HModuleImportData struct {
-	ImportedModules []string
+	ImportedModules [][]string
 	UsesTH bool
 }
 

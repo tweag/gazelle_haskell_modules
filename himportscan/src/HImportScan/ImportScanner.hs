@@ -11,6 +11,7 @@
 
 module HImportScan.ImportScanner
   ( ScannedImports(..)
+  , ModuleImport(..)
   , scanImports
   , scanImportsFromFile
   ) where
@@ -20,6 +21,7 @@ import qualified Data.Aeson as Aeson
 import Data.ByteString.Internal(ByteString(..))
 import Data.Char (isAlphaNum, isSpace, toLower)
 import Data.List (isSuffixOf, nub)
+import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -33,9 +35,14 @@ import Text.Parsec.Pos (newPos)
 data ScannedImports = ScannedImports
   { filePath :: Text  -- ^ Path of the Haskell module
   , moduleName :: Text  -- ^ The module name
-  , importedModules :: [Text] -- ^ The modules imported in this module
+  , importedModules :: [ModuleImport] -- ^ The modules imported in this module
   , usesTH :: Bool  -- ^ Whether the module needs TH or the interpreter
   }
+  deriving Eq
+
+-- | A module import holds a module name and an optional package name
+-- when using package imports.
+data ModuleImport = ModuleImport (Maybe Text) Text
   deriving Eq
 
 instance Aeson.ToJSON ScannedImports where
@@ -46,6 +53,10 @@ instance Aeson.ToJSON ScannedImports where
       , ("importedModules", Aeson.toJSON importedModules)
       , ("usesTH", Aeson.toJSON usesTH)
       ]
+
+instance Aeson.ToJSON ModuleImport where
+  toJSON (ModuleImport maybePackageName moduleName) =
+    Aeson.toJSON $ catMaybes [maybePackageName, Just moduleName]
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
@@ -107,7 +118,7 @@ flipBirdTracks f =
 
 data ScannedData = ScannedData
     { moduleName :: Text
-    , importedModules :: [Text]
+    , importedModules :: [ModuleImport]
     , usesTH :: Bool
     }
 
@@ -155,8 +166,13 @@ scanTokenStream fp toks =
     parseImport = do
       _ <- satisfy "import" $ \case ITimport -> Just (); _ -> Nothing
       _ <- optional $ satisfy "qualified" $ \case ITqualified -> Just (); _ -> Nothing
-      _ <- optional $ satisfy "string" $ \case ITstring{} -> Just (); _ -> Nothing
-      parseModuleName <* parseImportTail
+      maybePackageName <- optionMaybe parseString
+      moduleName <- parseModuleName <* parseImportTail
+      return $ ModuleImport maybePackageName moduleName
+
+    parseString = satisfy "string" $ \case
+      ITstring _ str -> Just $ Text.pack $ unpackFS str
+      _ -> Nothing
 
     parseImportTail = do
       _ <- optional $ do

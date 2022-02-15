@@ -131,9 +131,10 @@ func optionsEnableTH(opts []string) bool {
 //
 func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
-	moduleName string,
+	moduleId []string,
 	libs []label.Label,
 ) (*label.Label, error) {
+	moduleName := moduleId[len(moduleId)-1]
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
@@ -165,9 +166,10 @@ func findModuleLabelByModuleName(
 //
 func findCrossLibraryModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
-	moduleName string,
+	moduleId []string,
 	libs []label.Label,
 ) (*label.Label, error) {
+	moduleName := moduleId[len(moduleId)-1]
 	spec := moduleByNameSpec(moduleName)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
