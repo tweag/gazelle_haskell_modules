@@ -16,7 +16,6 @@ module HImportScan.ImportScanner
   , scanImportsFromFile
   ) where
 
-import Control.Monad (void)
 import qualified Data.Aeson as Aeson
 import Data.ByteString.Internal(ByteString(..))
 import Data.Char (isAlphaNum, isSpace, toLower)
@@ -131,7 +130,7 @@ scanTokenStream fp toks =
     parser = do
       langExts <- concat <$> many parseLanguagePragma
       modName <- parseModuleHeader <|> return "Main"
-      _ <- optional $ satisfy "virtual brace" $ \case ITvocurly -> Just (); _ -> Nothing
+      optional $ satisfy "virtual brace" $ \case ITvocurly -> Just (); _ -> Nothing
       skipMany comment
       imports <- many parseImport
       return ScannedData
@@ -148,7 +147,7 @@ scanTokenStream fp toks =
         _ -> Nothing
 
     parseModuleHeader = do
-      _ <- satisfy "module" $ \case
+      satisfy "module" $ \case
         ITmodule -> Just ()
         _ -> Nothing
       parseModuleName <* parseHeaderTail
@@ -164,8 +163,8 @@ scanTokenStream fp toks =
         _ -> Nothing
 
     parseImport = do
-      _ <- satisfy "import" $ \case ITimport -> Just (); _ -> Nothing
-      _ <- optional $ satisfy "qualified" $ \case ITqualified -> Just (); _ -> Nothing
+      satisfy "import" $ \case ITimport -> Just (); _ -> Nothing
+      optional $ satisfy "qualified" $ \case ITqualified -> Just (); _ -> Nothing
       maybePackageName <- optionMaybe parseString
       moduleName <- parseModuleName <* parseImportTail
       return $ ModuleImport maybePackageName moduleName
@@ -175,12 +174,12 @@ scanTokenStream fp toks =
       _ -> Nothing
 
     parseImportTail = do
-      _ <- optional $ do
+      optional $ do
         satisfy "as" $ \case ITas -> Just (); _ -> Nothing
         parseModuleName
-      _ <- optional $ satisfy "hiding" $ \case IThiding -> Just (); _ -> Nothing
-      _ <- optional parseNestedParens
-      void $ optional $ satisfy ";" $ \case ITsemi -> Just (); _ -> Nothing
+      optional $ satisfy "hiding" $ \case IThiding -> Just (); _ -> Nothing
+      optional parseNestedParens
+      optional $ satisfy ";" $ \case ITsemi -> Just (); _ -> Nothing
 
     parseNestedParens = flip label "nested parentheses" $ do
       satisfy "(" $ \case IToparen -> Just (); _ -> Nothing
@@ -188,7 +187,7 @@ scanTokenStream fp toks =
       skipMany $ do
         parseNestedParens
         skipMany $ satisfy "not ( or )" $ \case IToparen -> Nothing; ITcparen -> Nothing; _ -> Just ()
-      void $ satisfy ")" $ \case ITcparen -> Just (); _ -> Nothing
+      satisfy ")" $ \case ITcparen -> Just (); _ -> Nothing
 
     satisfy lbl f = satisfyEvenComments lbl f <* skipMany comment
 
