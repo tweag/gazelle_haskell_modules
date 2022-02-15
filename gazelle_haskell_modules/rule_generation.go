@@ -296,8 +296,27 @@ func setVisibilities(f *rule.File, rules []*rule.Rule) {
 type ModuleData struct {
 	ModuleName string
 	FilePath  string
-	ImportedModules [][]string
+	ImportedModules []ModuleImport
 	UsesTH bool
+}
+
+type ModuleImport struct {
+	PackageName string
+	ModuleName string
+}
+
+func (moduleImport *ModuleImport) UnmarshalJSON(data []byte) error {
+	var aux []string
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	pkgName := ""
+	if len(aux) > 1 {
+		pkgName = aux[0]
+	}
+	moduleImport.PackageName = pkgName
+	moduleImport.ModuleName = aux[len(aux)-1]
+	return nil
 }
 
 type RuleInfo struct {
@@ -306,7 +325,7 @@ type RuleInfo struct {
 }
 
 type HModuleImportData struct {
-	ImportedModules [][]string
+	ImportedModules []ModuleImport
 	UsesTH bool
 }
 

@@ -117,11 +117,16 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 		for _, originatingRule := range originatingRules {
 			if originatingRule.Kind() == "haskell_library" {
-				moduleSpecs = append(moduleSpecs, moduleByIdSpec([]string{getPackageNameFromRule(originatingRule), getModuleNameFromRule(r)}))
+				moduleSpecs = append(
+					moduleSpecs,
+					moduleByModuleImportSpec(&ModuleImport{getPackageNameFromRule(originatingRule),getModuleNameFromRule(r)}),
+				)
 			}
 		}
 		if len(originatingRules) > 0 {
-			moduleSpecs = append(moduleSpecs, moduleByIdSpec([]string{getModuleNameFromRule(r)}))
+			moduleSpecs = append(
+				moduleSpecs,
+				moduleByModuleImportSpec(&ModuleImport{"", getModuleNameFromRule(r)}))
 		}
 		return moduleSpecs
 	} else if isNonHaskellModule(r.Kind()) {
