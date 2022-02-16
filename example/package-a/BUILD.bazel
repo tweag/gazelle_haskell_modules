@@ -50,6 +50,21 @@ haskell_library(
     ],
 )
 
+# This library is used to test PackageImports
+haskell_library(
+    name = "package-a-v2",
+    srcs = [
+        "src-v2/PackageA/Exposed/A.hs",
+    ],
+    compiler_flags = [
+        "-Wall",
+        "-Werror",
+    ],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = ["@stackage//:base"],
+)
+
 haskell_library(
     name = "package-a",
     srcs = [

@@ -111,12 +111,22 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	if r.Kind() == "haskell_module" {
 		originatingRules := getOriginatingRules(r)
-		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), len(originatingRules) + 1)
+		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), 2*len(originatingRules) + 1)
 		for i, originatingRule := range originatingRules {
 			moduleSpecs[i] = moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))
 		}
+		for _, originatingRule := range originatingRules {
+			if originatingRule.Kind() == "haskell_library" {
+				moduleSpecs = append(
+					moduleSpecs,
+					moduleByModuleImportSpec(&ModuleImport{getPackageNameFromRule(originatingRule),getModuleNameFromRule(r)}),
+				)
+			}
+		}
 		if len(originatingRules) > 0 {
-			moduleSpecs = append(moduleSpecs, moduleByNameSpec(getModuleNameFromRule(r)))
+			moduleSpecs = append(
+				moduleSpecs,
+				moduleByModuleImportSpec(&ModuleImport{"", getModuleNameFromRule(r)}))
 		}
 		return moduleSpecs
 	} else if isNonHaskellModule(r.Kind()) {
@@ -218,6 +228,15 @@ func getModuleNameFromRule(r *rule.Rule) string {
 		log.Fatal("Error reading module name of " + r.Name())
 	}
 	return r.PrivateAttr(PRIVATE_ATTR_MODULE_NAME).(string)
+}
+
+func getPackageNameFromRule(r *rule.Rule) string {
+	pkgName := r.AttrString("package_name")
+	if pkgName != "" {
+		return pkgName
+	} else {
+		return r.Name()
+	}
 }
 
 func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string {

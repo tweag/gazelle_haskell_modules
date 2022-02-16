@@ -84,7 +84,7 @@ func setHaskellModuleDeps(
 	deps := make([]string, 0, depsCapacity)
 	crossLibraryDeps := make([]string, 0, depsCapacity)
 	for _, mod := range importData.ImportedModules {
-		dep, err := findModuleLabelByModuleName(ix, mod, originalLibs)
+		dep, err := findModuleLabelByModuleName(ix, &mod, originalLibs)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -92,8 +92,8 @@ func setHaskellModuleDeps(
 			deps = append(deps, rel(*dep, from).String())
 			continue
 		}
-		
-		dep, err = findCrossLibraryModuleLabelByModuleName(ix, mod, originalLibs)
+
+		dep, err = findCrossLibraryModuleLabelByModuleName(ix, &mod, originalLibs)
 		if err != nil {
 			log.Fatal("On rule ", r.Name(), ": ", err)
 		}
@@ -131,10 +131,10 @@ func optionsEnableTH(opts []string) bool {
 //
 func findModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
-	moduleName string,
+	moduleImport *ModuleImport,
 	libs []label.Label,
 ) (*label.Label, error) {
-	spec := moduleByNameSpec(moduleName)
+	spec := moduleByModuleImportSpec(moduleImport)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
@@ -142,7 +142,14 @@ func findModuleLabelByModuleName(
 		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
 		if len(intersection) > 0 {
 			if foundLabel.Name != "" {
-				return nil, fmt.Errorf("Multiple rules define %q in %v: %v and %v", moduleName, intersection, foundLabel, r.Label)
+				return nil, fmt.Errorf(
+					"Multiple rules define %q:%s in %v: %v and %v",
+					moduleImport.PackageName,
+					moduleImport.ModuleName,
+					intersection,
+					foundLabel,
+					r.Label,
+				)
 			} else {
 				foundLabel = r.Label
 			}
@@ -165,10 +172,10 @@ func findModuleLabelByModuleName(
 //
 func findCrossLibraryModuleLabelByModuleName(
 	ix *resolve.RuleIndex,
-	moduleName string,
+	moduleImport *ModuleImport,
 	libs []label.Label,
 ) (*label.Label, error) {
-	spec := moduleByNameSpec(moduleName)
+	spec := moduleByModuleImportSpec(moduleImport)
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
@@ -182,8 +189,9 @@ func findCrossLibraryModuleLabelByModuleName(
 				for i, r1 := range res {
 					lbls[i] = r1.Label
 				}
-				return nil, fmt.Errorf("Multiple rules define %q in narrowed deps of %v and %v: %v and %v with narrowed_deps %v and %v",
-				              moduleName,
+				return nil, fmt.Errorf("Multiple rules define %q:%s in narrowed deps of %v and %v: %v and %v with narrowed_deps %v and %v",
+							  moduleImport.PackageName,
+							  moduleImport.ModuleName,
 							  foundOriginalLibLabel,
 							  originalLib,
 							  foundLabel,
@@ -280,10 +288,17 @@ func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
 	}
 }
 
-func moduleByNameSpec(moduleName string) resolve.ImportSpec {
+func moduleByModuleImportSpec(moduleImport *ModuleImport) resolve.ImportSpec {
 	return resolve.ImportSpec {
 		gazelleHaskellModulesName,
-		fmt.Sprintf("module_name:%s", moduleName),
+		fmt.Sprintf("module_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
+	}
+}
+
+func moduleByPackageImportSpec(pkgName string, moduleName string) resolve.ImportSpec {
+	return resolve.ImportSpec {
+		gazelleHaskellModulesName,
+		fmt.Sprintf("module_name:%s:%s", pkgName, moduleName),
 	}
 }
 
