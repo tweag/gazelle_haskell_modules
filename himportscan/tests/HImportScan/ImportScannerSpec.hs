@@ -1,9 +1,11 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 module HImportScan.ImportScannerSpec where
 
 import Data.Char (isSpace)
+import Data.Maybe (catMaybes)
 import Data.String.QQ (s)
 import Test.Hspec
 import HImportScan.ImportScanner (ModuleImport(..), ScannedImports(..), scanImports)
@@ -20,17 +22,20 @@ instance Show NicelyPrinted where
   show (NicelyPrinted si) = Text.unpack $ showScannedImports si
 
 showScannedImports :: ScannedImports -> Text
-showScannedImports si = Text.unlines $ map ("    " <>) $
+showScannedImports ScannedImports{filePath, moduleName, importedModules, usesTH} =
+    Text.unlines $ map ("    " <>) $
     [ ""
-    , filePath si
-    , moduleName si
+    , filePath
+    , moduleName
     ] ++
-    map (("  " <>) . showImport) (importedModules si) ++
-    [ "usesTH = " <> Text.pack (show $ usesTH si)
+    map (("  " <>) . showImport) (importedModules) ++
+    [ "usesTH = " <> Text.pack (show usesTH)
     ]
-  where
-    showImport (ModuleImport (Just pkg) x) = Text.pack (show pkg) <> " " <> x
-    showImport (ModuleImport Nothing x) = x
+
+showImport :: ModuleImport -> Text
+showImport ModuleImport{hasSourcePragma, maybePackageName, moduleName} =
+  let maybeSourcePragma = if hasSourcePragma then Just ":SOURCE" else Nothing
+   in Text.unwords $ catMaybes [maybeSourcePragma, maybePackageName, Just moduleName]
 
 -- |
 --
@@ -62,7 +67,7 @@ testSourceWithFile file moduleName importedModules usesTH contents = do
 
 spec_scanImports :: Spec
 spec_scanImports = do
-    let m = ModuleImport Nothing
+    let m = ModuleImport False Nothing
     it "should accept empty files" $
       testSource "Main" [] False ""
     it "should find an import" $
@@ -82,8 +87,8 @@ spec_scanImports = do
     it "should accept package imports" $
       testSource
         "M"
-        [ ModuleImport (Just "package-a") "A.B.C"
-        , ModuleImport (Just "package-b") "A.B.D"
+        [ ModuleImport False (Just "package-a") "A.B.C"
+        , ModuleImport False (Just "package-b") "A.B.D"
         ]
         False
         [s|
@@ -91,6 +96,19 @@ spec_scanImports = do
 
            import "package-a" A.B.C
            import qualified "package-b" A.B.D
+         |]
+    it "should accept source pragmas" $
+      testSource
+        "M"
+        [ m "A.B.C"
+        , ModuleImport True Nothing "A.B.D"
+        ]
+        False
+        [s|
+           module M where
+
+           import A.B.C
+           import {-# SOURCE #-} A.B.D
          |]
     it "should accept declarations after imports" $
       testSource "M" [m "A.B.C", m "A.B.D"] False [s|

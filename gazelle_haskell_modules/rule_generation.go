@@ -310,6 +310,9 @@ func (moduleImport *ModuleImport) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+	if aux[0] == ":SOURCE" {
+		aux = aux[1:]
+	}
 	pkgName := ""
 	if len(aux) > 1 {
 		pkgName = aux[0]

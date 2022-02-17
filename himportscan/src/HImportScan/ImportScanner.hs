@@ -20,7 +20,7 @@ import qualified Data.Aeson as Aeson
 import Data.ByteString.Internal(ByteString(..))
 import Data.Char (isAlphaNum, isSpace, toLower)
 import Data.List (isSuffixOf, nub)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, isJust)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -41,7 +41,11 @@ data ScannedImports = ScannedImports
 
 -- | A module import holds a module name and an optional package name
 -- when using package imports.
-data ModuleImport = ModuleImport (Maybe Text) Text
+data ModuleImport = ModuleImport
+  { hasSourcePragma :: Bool
+  , maybePackageName :: Maybe Text
+  , moduleName :: Text
+  }
   deriving Eq
 
 instance Aeson.ToJSON ScannedImports where
@@ -54,8 +58,10 @@ instance Aeson.ToJSON ScannedImports where
       ]
 
 instance Aeson.ToJSON ModuleImport where
-  toJSON (ModuleImport maybePackageName moduleName) =
-    Aeson.toJSON $ catMaybes [maybePackageName, Just moduleName]
+  toJSON ModuleImport{hasSourcePragma, maybePackageName, moduleName} =
+    let maybeSourcePragma = if hasSourcePragma then Just ":SOURCE" else Nothing
+     in Aeson.toJSON $
+         catMaybes [maybeSourcePragma, maybePackageName , Just moduleName]
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
@@ -164,10 +170,11 @@ scanTokenStream fp toks =
 
     parseImport = do
       satisfy "import" $ \case ITimport -> Just (); _ -> Nothing
+      hasSourcePragma <- isJust <$> optionMaybe sourcePragma
       optional $ satisfy "qualified" $ \case ITqualified -> Just (); _ -> Nothing
       maybePackageName <- optionMaybe parseString
       moduleName <- parseModuleName <* parseImportTail
-      return $ ModuleImport maybePackageName moduleName
+      return $ ModuleImport{hasSourcePragma, maybePackageName, moduleName}
 
     parseString = satisfy "string" $ \case
       ITstring _ str -> Just $ Text.pack $ unpackFS str
@@ -201,6 +208,15 @@ scanTokenStream fp toks =
         ITlineComment c -> Just c
         _ -> Nothing
       ) <* optional (satisfyEvenComments ";" $ \case ITsemi -> Just (); _ -> Nothing)
+
+    sourcePragma :: Parsec [Located Token] () ()
+    sourcePragma = do
+      satisfyEvenComments "SOURCE pragma" $ \case
+        ITsource_prag _ -> Just ()
+        _ -> Nothing
+      satisfyEvenComments "ITclose_prag" $ \case
+        ITclose_prag -> Just ()
+        _ -> Nothing
 
     locToSourcePos :: Located a -> SourcePos
     locToSourcePos loc =
