@@ -23,7 +23,7 @@ haskell_binary(
 haskell_binary(
     name = "another-haskell-binary",
     srcs = [
-        "app/Main.hs",
+        "app/AnotherMain.hs",
         "app/PackageA/Other/C.hs",
     ],
     compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],

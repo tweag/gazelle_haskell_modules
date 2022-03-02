@@ -79,6 +79,7 @@ var haskellModuleAttrInfo = rule.KindInfo{
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
 		"deps":               true,
+		"module_name":        true,
 		"cross_library_deps": true,
 		"enable_th":          true,
 	},
