@@ -92,6 +92,12 @@ haskell_library(
 )
 
 haskell_module(
+    name = "another-haskell-binary.Main",
+    src = "app/AnotherMain.hs",
+    extra_srcs = glob(["app/**"]),
+)
+
+haskell_module(
     name = "non-enclosed-module",
     src = "app/Main.hs",
 )
