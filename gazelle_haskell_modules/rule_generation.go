@@ -191,7 +191,7 @@ func addNonHaskellModuleRules(
 		if isNonHaskellModule(r.Kind()) {
 			newr := rule.NewRule(r.Kind(), r.Name())
 			for _, k := range r.AttrKeys() {
-				if k != "srcs" && k != "modules" && k != "deps" && k != "narrowed_deps" {
+				if k != "srcs" && k != "modules" && k != "deps" && k != "narrowed_deps" && k != "main_file" {
 					newr.SetAttr(k, r.Attr(k))
 				}
 			}
