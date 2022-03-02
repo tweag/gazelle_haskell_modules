@@ -14,8 +14,8 @@ haskell_binary(
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
-        ":package-a",
         ":nonmoduleslib",
+        ":package-a",
         "@stackage//:base",
     ],
 )
@@ -30,8 +30,8 @@ haskell_binary(
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
-        ":package-a",
         ":nonmoduleslib",
+        ":package-a",
         "@stackage//:base",
     ],
 )
