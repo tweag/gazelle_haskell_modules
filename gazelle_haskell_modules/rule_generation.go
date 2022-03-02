@@ -62,23 +62,30 @@ func nonHaskellModuleRulesToRuleInfos(
 				OriginatingRules: []*rule.Rule{r},
 				ModuleData: modData,
 			}
-			moduleLabels[label.New(repo, pkg, ruleNameFromRuleInfo(ruleInfos[i]))] = true
+			modLabel := label.New(repo, pkg, ruleNameFromRuleInfo(ruleInfos[i]))
+			addOriginatingRule(originatingRules, &modLabel, r)
+			moduleLabels[modLabel] = true
 		}
 		ruleInfoss = append(ruleInfoss, ruleInfos)
 
 		for mod, _ := range modules {
-			oRules := originatingRules[mod]
-			if oRules == nil {
-				originatingRules[mod] = []*rule.Rule{r}
-			} else {
-				originatingRules[mod] = append(oRules, r)
-			}
+			addOriginatingRule(originatingRules, &mod, r)
 			moduleLabels[mod] = true
 		}
 
 		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_LABELS, moduleLabels)
 	}
 	return ruleInfoss, originatingRules
+}
+
+// Adds a rule to a map at the given label.
+func addOriginatingRule(originatingRules map[label.Label][]*rule.Rule, mod *label.Label, r *rule.Rule) {
+	oRules := originatingRules[*mod]
+	if oRules == nil {
+		originatingRules[*mod] = []*rule.Rule{r}
+	} else {
+		originatingRules[*mod] = append(oRules, r)
+	}
 }
 
 // originatingRules is used to determine which rule is originating a haskell_module
