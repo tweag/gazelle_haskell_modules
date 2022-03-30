@@ -32,6 +32,7 @@ const PRIVATE_ATTR_MODULE_LABELS = "module_labels"
 const PRIVATE_ATTR_DEP_LABELS = "dep_labels"
 const PRIVATE_ATTR_MODULE_NAME = "module_name"
 const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
+const PRIVATE_FIND_MODULES_DIRECTIVE = "gazelle_haskell_modules:srcs:"
 
 // Yields the rule infos and a map of module labels to the rules that
 // enclose the modules.
@@ -458,4 +459,40 @@ func shouldModularize(r *rule.Rule) bool {
 		}
 	}
 	return true
+}
+
+// Detect srcs specifications from comments attached to a rule.
+//
+// # gazelle_haskell_modules:srcs: src/ pirin/
+// ->
+// [src/ pirin/]
+func getSrcDirsFromRuleDirective(r *rule.Rule) ([]string, error) {
+  return getSrcDirsFromComments(r.Comments())
+}
+
+func getSrcDirsFromComments(cs []string) ([]string, error) {
+
+  srcsComment := ""
+  for _, comment := range cs {
+    if strings.Contains(comment, PRIVATE_FIND_MODULES_DIRECTIVE) {
+      if srcsComment != "" {
+        // TODO add more information on where
+        return nil, fmt.Errorf("found more than one srcs directive")
+      }
+      srcsComment = comment
+    }
+  }
+
+  split := strings.Split(srcsComment, PRIVATE_FIND_MODULES_DIRECTIVE)
+  splitLen := len(split)
+
+  if splitLen > 2 {
+    return nil, fmt.Errorf("comment contains more than one srcs directive")
+  }
+
+  if splitLen < 2 {
+    return []string{}, nil
+  }
+
+  return strings.Fields(split[1]), nil
 }
