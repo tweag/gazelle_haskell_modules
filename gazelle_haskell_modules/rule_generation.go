@@ -6,6 +6,7 @@ import (
 	"log"
 	"path"
 	"path/filepath"
+  "io/fs"
 
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -49,7 +50,7 @@ func nonHaskellModuleRulesToRuleInfos(
 		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) {
 			continue
 		}
-		srcs, err := srcsFromRule(pkgRoot, r.Attr("srcs"))
+		srcs, err := getSrcs(pkgRoot, r)
 		handleRuleError(err, r, "srcs")
 
 		modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
@@ -209,7 +210,7 @@ func addNonHaskellModuleRules(
 				}
 			}
 
-			srcs, err := srcsFromRule(pkgRoot, r.Attr("srcs"))
+			srcs, err := getSrcs(pkgRoot, r)
 			handleRuleError(err, r, "srcs")
 			modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
 			handleRuleError(err, r, "modules")
@@ -266,21 +267,57 @@ func concatRuleInfos(xs [][]*RuleInfo) []*RuleInfo {
 	return ys
 }
 
-// Collects the source files referenced in the given expression
-func srcsFromRule(pkgRoot string, expr build.Expr) ([]string, error) {
-	srcs, err := getSources(expr)
-	if err != nil {
-		return nil, err
-	}
+// TODO: docs
+func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
+  hasSrcs := false
+  for _, attrKey := range r.AttrKeys() {
+    if attrKey == "srcs" {
+      hasSrcs = true
+      break
+    }
+  }
 
-	xs := make([]string, len(srcs))
-	i := 0
-	for f, _ := range srcs {
-		xs[i] = path.Join(pkgRoot, f)
-		i++
-	}
+  if hasSrcs {
+	  srcs, err := getSources(r.Attr("srcs"))
 
-	return xs, nil
+	  if err != nil {
+      return nil, err
+	  }
+
+	  xs := make([]string, len(srcs))
+	  i := 0
+	  for f, _ := range srcs {
+      xs[i] = path.Join(pkgRoot, f)
+      i++
+	  }
+
+    return xs, nil
+  } else {
+    srcDirs, err := getSrcDirsFromRuleDirective(r)
+    if err != nil {
+      log.Fatal(err)
+    }
+
+    if len(srcDirs) == 0 {
+      // TODO not sure about this, but it's the same as the err case in the previous branch
+      // which works fine..
+      return nil, nil
+    }
+
+    srcs, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
+    if err != nil {
+      log.Fatal(err)
+    }
+
+	  xs := make([]string, len(srcs))
+	  i := 0
+	  for f, _ := range srcs {
+      xs[i] = f
+      i++
+	  }
+
+    return xs, nil
+  }
 }
 
 // Collects the dependencies referenced in the given expression
@@ -392,6 +429,26 @@ func getSources(expr build.Expr) (map[string]bool, error) {
 		sourceMap[x] = true
 	}
 	return sourceMap, nil
+}
+
+func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) (map[string]bool, error) {
+  sourceMap := make(map[string]bool)
+  for _, dir := range dirs {
+    err := filepath.WalkDir(path.Join(pkgRoot, dir), func(path string, d fs.DirEntry, err error) error {
+      if err != nil {
+        log.Fatal(err)
+      }
+      // TODO what about hsc and -boot files?
+      if strings.HasSuffix(path, ".hs") || strings.HasSuffix(path, ".lhs") {
+        sourceMap[path] = true
+      }
+      return nil
+    })
+    if err != nil {
+      log.Fatal(err)
+    }
+  }
+  return sourceMap, nil
 }
 
 // Similar to (*Rule) AttrStrings(key string) []string
