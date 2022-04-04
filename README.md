@@ -121,6 +121,34 @@ rules in the same `BUILD` file containing the `haskell_module` rule.
 
 ## Rule generation
 
+### Finding source files
+
+There are two ways for `gazelle_haskell_modules` to find source files containing modules.
+
+### Autodetect directive
+
+By attaching the `gazelle_haskell_modules:srcs: <folders..>` directive to a rule,
+`gazelle_haskell_modules` will recursively search `<folders..>` to find Haskell source files
+to generate `haskell_module`s with. After finding files, `gazelle_haskell_modules` will proceed
+as if the files were manually specified, as documented [below](#specified-in-srcs).
+
+Example:
+```bazel
+# gazelle_haskell_modules:srcs: src/
+haskell_library(
+    name = "package-c",
+    ...
+)
+```
+
+More examples of this usage can be found in [`package-c`][directive-examples]
+
+If `srcs` are explicitly specified in the rule, the directive is ignored.
+
+[directive-examples]: example/package-c/BUILD.bazel
+
+### Specified in `srcs`
+
 Each module listed in the `srcs` attribute of a Haskell rule originates
 a `haskell_module` rule with name `<pkg>.<module>`. The dependencies
 of the `haskell_module` rule are populated with labels corresponding
@@ -164,13 +192,6 @@ generate `haskell_module` rules. The most important functions are:
   information about dependencies (`deps`, `plugins`, and `tools`).
 
 ## Limitations
-
-### Source file discovery
-
-At the moment source files need to be listed in the `srcs` attribute
-of a Haskell rule to be built. It would be possible to implement
-a mechanism to discover files automatically, say, if they are close
-enough to other files that are build by Haskell rules.
 
 ### Support for hidden_modules
 
