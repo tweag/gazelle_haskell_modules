@@ -1,5 +1,7 @@
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 
+# example for basic usage of the autodetect directive
+#
 # gazelle_haskell_modules:srcs: src/
 haskell_library(
     name = "package-c",
@@ -19,6 +21,8 @@ haskell_library(
     ],
 )
 
+# example where we ignore the directive because srcs is specified explicitly
+#
 # gazelle_haskell_modules:srcs: src/
 haskell_library(
     name = "package-c-explicit-srcs",
@@ -39,6 +43,8 @@ haskell_library(
     ],
 )
 
+# example where we have more than one folder to search
+#
 # gazelle_haskell_modules:srcs: src/ more-src/
 haskell_library(
     name = "package-c-multiple-srcs",
@@ -61,6 +67,8 @@ haskell_library(
     ],
 )
 
+# example where we have already autodetected some modules, but a new one has been added
+#
 # gazelle_haskell_modules:srcs: another-src/
 haskell_library(
     name = "package-c-detect-new",
