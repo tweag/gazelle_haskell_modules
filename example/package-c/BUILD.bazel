@@ -19,6 +19,28 @@ haskell_library(
     ],
 )
 
+# gazelle_haskell_modules:srcs: src/ more-src/
+haskell_library(
+    name = "package-c-multiple-srcs",
+    compiler_flags = [
+        "-DVERSION_package_b=\"0.1.0.0\"",
+        "-XScopedTypeVariables",
+        "-lm",
+    ],
+    hidden_modules = [
+        "PackageC.Other.B",
+        "PackageC.Other.F",
+    ],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//package-a",
+        "//package-a:package-a-v2",
+        "@stackage//:base",
+        "@stackage//:void",
+    ],
+)
+
 # gazelle_haskell_modules:srcs: another-src/
 haskell_library(
     name = "package-c-detect-new",
