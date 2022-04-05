@@ -279,11 +279,9 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 			return nil, err
 		}
 
-		xs := make([]string, len(srcs))
-		i := 0
-		for f, _ := range srcs {
-			xs[i] = path.Join(pkgRoot, f)
-			i++
+		var xs []string
+		for file := range srcs {
+			xs = append(xs, path.Join(pkgRoot, file))
 		}
 
 		return xs, nil
