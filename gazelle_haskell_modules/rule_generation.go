@@ -289,7 +289,7 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 
 	srcDirs, err := getSrcDirsFromRuleDirective(r)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("getSrcs: %w", err)
 	}
 
 	if len(srcDirs) == 0 {
@@ -298,7 +298,7 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 
 	srcs, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("getSrcs: %w", err)
 	}
 	return srcs, nil
 }
