@@ -295,8 +295,6 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 	}
 
 	if len(srcDirs) == 0 {
-		// TODO not sure about this, but it's the same as the err case in the previous branch
-		// which works fine..
 		return nil, nil
 	}
 
