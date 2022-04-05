@@ -297,7 +297,7 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 	}
 
 	if len(srcDirs) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("didn't find a srcs attribute or an autodetect directive")
 	}
 
 	srcs, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
