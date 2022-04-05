@@ -295,32 +295,32 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 		}
 
 		return xs, nil
-	} else {
-		srcDirs, err := getSrcDirsFromRuleDirective(r)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if len(srcDirs) == 0 {
-			// TODO not sure about this, but it's the same as the err case in the previous branch
-			// which works fine..
-			return nil, nil
-		}
-
-		srcs, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		xs := make([]string, len(srcs))
-		i := 0
-		for f, _ := range srcs {
-			xs[i] = f
-			i++
-		}
-
-		return xs, nil
 	}
+
+	srcDirs, err := getSrcDirsFromRuleDirective(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(srcDirs) == 0 {
+		// TODO not sure about this, but it's the same as the err case in the previous branch
+		// which works fine..
+		return nil, nil
+	}
+
+	srcs, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	xs := make([]string, len(srcs))
+	i := 0
+	for f, _ := range srcs {
+		xs[i] = f
+		i++
+	}
+
+	return xs, nil
 }
 
 // Collects the dependencies referenced in the given expression
