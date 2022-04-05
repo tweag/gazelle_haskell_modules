@@ -272,16 +272,8 @@ func concatRuleInfos(xs [][]*RuleInfo) []*RuleInfo {
 // 1. All the files (recursively) in directories specified in a "gazelle_haskell_modules:srcs:"
 // If the "srcs" attribute is present, 1. is ignored.
 func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
-	hasSrcs := false
-	for _, attrKey := range r.AttrKeys() {
-		if attrKey == "srcs" {
-			hasSrcs = true
-			break
-		}
-	}
-
-	if hasSrcs {
-		srcs, err := getSources(r.Attr("srcs"))
+	if expr := r.Attr("srcs"); expr != nil {
+		srcs, err := getSources(expr)
 
 		if err != nil {
 			return nil, err
