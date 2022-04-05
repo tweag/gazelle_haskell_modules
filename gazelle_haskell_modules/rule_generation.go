@@ -520,7 +520,6 @@ func getSrcDirsFromComments(cs []string) ([]string, error) {
 	for _, comment := range cs {
 		if strings.Contains(comment, PRIVATE_FIND_MODULES_DIRECTIVE) {
 			if srcsComment != "" {
-				// TODO add more information on where
 				return nil, fmt.Errorf("found more than one srcs directive")
 			}
 			srcsComment = comment
