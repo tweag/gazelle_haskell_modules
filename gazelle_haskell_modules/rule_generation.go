@@ -423,7 +423,7 @@ func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) ([]string, err
 	for _, dir := range dirs {
 		err := filepath.WalkDir(path.Join(pkgRoot, dir), func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			// TODO what about hsc and -boot files?
 			if strings.HasSuffix(path, ".hs") || strings.HasSuffix(path, ".lhs") {
@@ -432,7 +432,7 @@ func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) ([]string, err
 			return nil
 		})
 		if err != nil {
-			log.Fatal(err)
+			return nil, fmt.Errorf("getSourcesRecursivelyFromDirs: %w", err)
 		}
 	}
 	return srcs, nil
