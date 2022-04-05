@@ -302,15 +302,7 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	xs := make([]string, len(srcs))
-	i := 0
-	for f, _ := range srcs {
-		xs[i] = f
-		i++
-	}
-
-	return xs, nil
+	return srcs, nil
 }
 
 // Collects the dependencies referenced in the given expression
@@ -424,8 +416,8 @@ func getSources(expr build.Expr) (map[string]bool, error) {
 	return sourceMap, nil
 }
 
-func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) (map[string]bool, error) {
-	sourceMap := make(map[string]bool)
+func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) ([]string, error) {
+	var srcs []string
 	for _, dir := range dirs {
 		err := filepath.WalkDir(path.Join(pkgRoot, dir), func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -433,7 +425,7 @@ func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) (map[string]bo
 			}
 			// TODO what about hsc and -boot files?
 			if strings.HasSuffix(path, ".hs") || strings.HasSuffix(path, ".lhs") {
-				sourceMap[path] = true
+				srcs = append(srcs, path)
 			}
 			return nil
 		})
@@ -441,7 +433,7 @@ func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) (map[string]bo
 			log.Fatal(err)
 		}
 	}
-	return sourceMap, nil
+	return srcs, nil
 }
 
 // Similar to (*Rule) AttrStrings(key string) []string
