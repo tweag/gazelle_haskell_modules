@@ -246,7 +246,11 @@ func appendLabelMaps(a map[label.Label]bool, b map[label.Label]bool) {
 func handleRuleError(err error, r *rule.Rule, attr string) {
 	if err != nil {
 		fmt.Println("Error when analyzing target", r.Name())
-		fmt.Println(attr, "=", build.FormatString(r.Attr(attr)))
+		if expr := r.Attr(attr); expr != nil {
+			fmt.Println(attr, "=", build.FormatString(expr))
+		} else {
+			fmt.Printf("%s doesn't exist in rule %s\n", attr, r.Name())
+		}
 		log.Fatal(err)
 	}
 }
