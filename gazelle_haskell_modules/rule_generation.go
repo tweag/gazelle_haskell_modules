@@ -7,6 +7,7 @@ import (
 	"log"
 	"path"
 	"path/filepath"
+	"regexp"
 
 	"github.com/bazelbuild/bazel-gazelle/label"
 	"github.com/bazelbuild/bazel-gazelle/language"
@@ -520,17 +521,23 @@ func getSrcDirsFromComments(cs []string) ([]string, error) {
 			srcsComment = comment
 		}
 	}
-
-	split := strings.Split(srcsComment, PRIVATE_FIND_MODULES_DIRECTIVE)
-	splitLen := len(split)
-
-	if splitLen > 2 {
-		return nil, fmt.Errorf("comment contains more than one srcs directive")
-	}
-
-	if splitLen < 2 {
+	if srcsComment == "" {
 		return []string{}, nil
 	}
+	stripped, err := stripDirective(srcsComment)
 
-	return strings.Fields(split[1]), nil
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Fields(stripped), nil
+}
+
+func stripDirective(c string) (string, error) {
+	regex := regexp.MustCompile(fmt.Sprintf(`#\s*%s(.*)`, PRIVATE_FIND_MODULES_DIRECTIVE))
+	matches := regex.FindStringSubmatch(c)
+	if len(matches) != 2 {
+		return "", fmt.Errorf("didn't find leading directive")
+	}
+	return matches[1], nil
 }
