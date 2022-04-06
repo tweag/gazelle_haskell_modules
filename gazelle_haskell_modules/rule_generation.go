@@ -271,24 +271,21 @@ func concatRuleInfos(xs [][]*RuleInfo) []*RuleInfo {
 	return ys
 }
 
-// Find either
+// Find and append together
 // 0. The files listed in the srcs attribute of a rule
 // 1. All the files (recursively) in directories specified in a "gazelle_haskell_modules:srcs:"
-// If the "srcs" attribute is present, 1. is ignored.
 func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
+	var srcs []string
 	if expr := r.Attr("srcs"); expr != nil {
-		srcs, err := getSources(expr)
+		sourcesFromSrcs, err := getSources(expr)
 
 		if err != nil {
 			return nil, err
 		}
 
-		var xs []string
-		for file := range srcs {
-			xs = append(xs, path.Join(pkgRoot, file))
+		for file := range sourcesFromSrcs {
+			srcs = append(srcs, path.Join(pkgRoot, file))
 		}
-
-		return xs, nil
 	}
 
 	srcDirs, err := getSrcDirsFromRuleDirective(r)
@@ -296,14 +293,12 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 		return nil, fmt.Errorf("getSrcs: %w", err)
 	}
 
-	if len(srcDirs) == 0 {
-		return nil, fmt.Errorf("didn't find a srcs attribute or an autodetect directive")
-	}
-
-	srcs, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
+	sourcesFromDirective, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
 	if err != nil {
 		return nil, fmt.Errorf("getSrcs: %w", err)
 	}
+
+	srcs = append(srcs, sourcesFromDirective...)
 	return srcs, nil
 }
 

@@ -21,9 +21,9 @@ haskell_library(
     ],
 )
 
-# example where we ignore the directive because srcs is specified explicitly
+# example where we combine files in srcs with ones found by the directive
 #
-# gazelle_haskell_modules:srcs: src/
+# gazelle_haskell_modules:srcs: more-src/
 haskell_library(
     name = "package-c-explicit-srcs",
     srcs = ["src/PackageC/Other/B.hs"],
@@ -32,7 +32,10 @@ haskell_library(
         "-XScopedTypeVariables",
         "-lm",
     ],
-    hidden_modules = ["PackageC.Other.B"],
+    hidden_modules = [
+        "PackageC.Other.B",
+        "PackageC.Other.F",
+    ],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
