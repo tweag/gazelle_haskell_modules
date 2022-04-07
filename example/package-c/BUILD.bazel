@@ -26,7 +26,10 @@ haskell_library(
 # gazelle_haskell_modules:srcs: explicit-src/Autodetect/
 haskell_library(
     name = "package-c-explicit-srcs",
-    srcs = ["explicit-src/Explicit/DepOnAuto.hs"],
+    srcs = [
+        "explicit-src/Explicit/DepOnAuto.hs",
+        "explicit-src/Autodetect/Root.hs",
+    ],
     compiler_flags = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",

@@ -278,36 +278,43 @@ func concatRuleInfos(xs [][]*RuleInfo) []*RuleInfo {
 // 0. The files listed in the srcs attribute of a rule
 // 1. All the files (recursively) in directories specified in a "gazelle_haskell_modules:srcs:"
 func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
-	var srcs []string
-
 	sourcesFromRule, err := srcsFromRule(pkgRoot, r)
 	if err != nil {
 		return nil, fmt.Errorf("getSrcs: %w", err)
 	}
-	srcs = append(srcs, sourcesFromRule...)
 
 	autodiscoveredSrcs, err := autodiscoverSrcs(pkgRoot, r)
 	if err != nil {
 		return nil, fmt.Errorf("getSrcs: %w", err)
 	}
-	srcs = append(srcs, autodiscoveredSrcs...)
+
+	// reuse the set we got form srcsFromRule to deduplicate autodiscovered and explicit files
+	for _, v := range autodiscoveredSrcs {
+		sourcesFromRule[v] = true
+	}
+
+	var srcs []string
+	for file := range sourcesFromRule {
+		srcs = append(srcs, file)
+	}
 	return srcs, nil
 }
 
-func srcsFromRule(pkgRoot string, r *rule.Rule) ([]string, error) {
-	var srcs []string
+func srcsFromRule(pkgRoot string, r *rule.Rule) (map[string]bool, error) {
 	if expr := r.Attr("srcs"); expr != nil {
-		sourcesFromSrcs, err := getSources(expr)
-
+		files, err := getStringList(expr)
 		if err != nil {
 			return nil, fmt.Errorf("srcsFromRule: %w", err)
 		}
 
-		for file := range sourcesFromSrcs {
-			srcs = append(srcs, path.Join(pkgRoot, file))
+		sourceMap := make(map[string]bool, len(files))
+		for _, file := range files {
+			sourceMap[path.Join(pkgRoot, file)] = true
 		}
+
+		return sourceMap, nil
 	}
-	return srcs, nil
+	return map[string]bool{}, nil
 }
 
 func autodiscoverSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
@@ -422,18 +429,6 @@ func ParseLabel(v string) (label.Label, error) {
 		v = fmt.Sprintf("%s//:%s", v, v[1:])
 	}
 	return label.Parse(v)
-}
-
-func getSources(expr build.Expr) (map[string]bool, error) {
-	xs, err := getStringList(expr)
-	if err != nil {
-		return nil, err
-	}
-	sourceMap := make(map[string]bool, len(xs))
-	for _, x := range xs {
-		sourceMap[x] = true
-	}
-	return sourceMap, nil
 }
 
 func getSourcesRecursivelyFromDirs(pkgRoot string, dirs []string) ([]string, error) {
