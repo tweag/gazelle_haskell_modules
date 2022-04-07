@@ -36,6 +36,8 @@ const PRIVATE_ATTR_MODULE_NAME = "module_name"
 const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
 const PRIVATE_FIND_MODULES_DIRECTIVE = "gazelle_haskell_modules:srcs:"
 
+var PRIVATE_STRIP_FIND_MODULES_DIRECTIVE = regexp.MustCompile(fmt.Sprintf(`#\s*%s(.*)`, PRIVATE_FIND_MODULES_DIRECTIVE))
+
 // Yields the rule infos and a map of module labels to the rules that
 // enclose the modules.
 func nonHaskellModuleRulesToRuleInfos(
@@ -554,8 +556,7 @@ func getSrcDirsFromComments(cs []string) ([]string, error) {
 }
 
 func stripDirective(c string) (string, error) {
-	regex := regexp.MustCompile(fmt.Sprintf(`#\s*%s(.*)`, PRIVATE_FIND_MODULES_DIRECTIVE))
-	matches := regex.FindStringSubmatch(c)
+	matches := PRIVATE_STRIP_FIND_MODULES_DIRECTIVE.FindStringSubmatch(c)
 	if len(matches) != 2 {
 		return "", fmt.Errorf("didn't find leading directive")
 	}
