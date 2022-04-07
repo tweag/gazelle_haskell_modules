@@ -23,24 +23,18 @@ haskell_library(
 
 # example where we combine files in srcs with ones found by the directive
 #
-# gazelle_haskell_modules:srcs: more-src/
+# gazelle_haskell_modules:srcs: explicit-src/Autodetect/
 haskell_library(
     name = "package-c-explicit-srcs",
-    srcs = ["src/PackageC/Other/B.hs"],
+    srcs = ["explicit-src/Explicit/DepOnAuto.hs"],
     compiler_flags = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
     ],
-    hidden_modules = [
-        "PackageC.Other.B",
-        "PackageC.Other.F",
-    ],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
-        "//package-a",
-        "//package-a:package-a-v2",
         "@stackage//:base",
         "@stackage//:void",
     ],
