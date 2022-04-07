@@ -319,7 +319,7 @@ func srcsFromRule(pkgRoot string, r *rule.Rule) (map[string]bool, error) {
 
 func autodiscoverSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 
-	srcDirs, err := getSrcDirsFromRuleDirective(r)
+	srcDirs, err := getSrcDirsFromComments(r.Comments())
 	if err != nil {
 		return nil, fmt.Errorf("autodiscoverSrcs: %w", err)
 	}
@@ -523,10 +523,6 @@ func shouldModularize(r *rule.Rule) bool {
 // # gazelle_haskell_modules:srcs: src/ pirin/
 // ->
 // [src/ pirin/]
-func getSrcDirsFromRuleDirective(r *rule.Rule) ([]string, error) {
-	return getSrcDirsFromComments(r.Comments())
-}
-
 func getSrcDirsFromComments(cs []string) ([]string, error) {
 
 	srcsComment := ""
