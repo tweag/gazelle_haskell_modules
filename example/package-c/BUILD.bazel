@@ -42,7 +42,7 @@ haskell_library(
 
 # example where we have more than one folder to search
 #
-# gazelle_haskell_modules:srcs: src/ more-src/
+# gazelle_haskell_modules:srcs: src/ multiple-folder-src/
 haskell_library(
     name = "package-c-multiple-srcs",
     compiler_flags = [
