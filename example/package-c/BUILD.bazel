@@ -91,6 +91,9 @@ haskell_library(
     ],
 )
 
+# test that we ignore autodetection when keep is present
+#
+# gazelle_haskell_modules:srcs: tests
 # gazelle_haskell_modules:keep
 haskell_test(
     name = "test",
