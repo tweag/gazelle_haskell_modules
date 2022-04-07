@@ -143,7 +143,8 @@ haskell_library(
 
 More examples of this usage can be found in [`package-c`][directive-examples]
 
-If `srcs` are explicitly specified in the rule, the directive is ignored.
+If `srcs` are also explicitly specified in the rule, the results of the directive and the files
+listed in the explicit srcs are combined.
 
 [directive-examples]: example/package-c/BUILD.bazel
 
