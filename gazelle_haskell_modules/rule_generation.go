@@ -277,30 +277,50 @@ func concatRuleInfos(xs [][]*RuleInfo) []*RuleInfo {
 // 1. All the files (recursively) in directories specified in a "gazelle_haskell_modules:srcs:"
 func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 	var srcs []string
+
+	sourcesFromRule, err := srcsFromRule(pkgRoot, r)
+	if err != nil {
+		return nil, fmt.Errorf("getSrcs: %w", err)
+	}
+	srcs = append(srcs, sourcesFromRule...)
+
+	autodiscoveredSrcs, err := autodiscoverSrcs(pkgRoot, r)
+	if err != nil {
+		return nil, fmt.Errorf("getSrcs: %w", err)
+	}
+	srcs = append(srcs, autodiscoveredSrcs...)
+	return srcs, nil
+}
+
+func srcsFromRule(pkgRoot string, r *rule.Rule) ([]string, error) {
+	var srcs []string
 	if expr := r.Attr("srcs"); expr != nil {
 		sourcesFromSrcs, err := getSources(expr)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("srcsFromRule: %w", err)
 		}
 
 		for file := range sourcesFromSrcs {
 			srcs = append(srcs, path.Join(pkgRoot, file))
 		}
 	}
+	return srcs, nil
+}
+
+func autodiscoverSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 
 	srcDirs, err := getSrcDirsFromRuleDirective(r)
 	if err != nil {
-		return nil, fmt.Errorf("getSrcs: %w", err)
+		return nil, fmt.Errorf("autodiscoverSrcs: %w", err)
 	}
 
 	sourcesFromDirective, err := getSourcesRecursivelyFromDirs(pkgRoot, srcDirs)
 	if err != nil {
-		return nil, fmt.Errorf("getSrcs: %w", err)
+		return nil, fmt.Errorf("autodiscoverSrcs:: %w", err)
 	}
 
-	srcs = append(srcs, sourcesFromDirective...)
-	return srcs, nil
+	return sourcesFromDirective, err
 }
 
 // Collects the dependencies referenced in the given expression
