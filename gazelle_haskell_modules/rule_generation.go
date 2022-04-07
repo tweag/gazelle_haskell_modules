@@ -293,9 +293,11 @@ func getSrcs(pkgRoot string, r *rule.Rule) ([]string, error) {
 		sourcesFromRule[v] = true
 	}
 
-	var srcs []string
+	srcs := make([]string, len(sourcesFromRule))
+	i := 0
 	for file := range sourcesFromRule {
-		srcs = append(srcs, file)
+		srcs[i] = file
+		i++
 	}
 	return srcs, nil
 }
