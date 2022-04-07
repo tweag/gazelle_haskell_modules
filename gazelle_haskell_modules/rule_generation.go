@@ -553,7 +553,7 @@ func getSrcDirsFromComments(cs []string) ([]string, error) {
 func stripDirective(c string) (string, error) {
 	matches := PRIVATE_STRIP_FIND_MODULES_DIRECTIVE.FindStringSubmatch(c)
 	if len(matches) != 2 {
-		return "", fmt.Errorf("didn't find leading directive")
+		return "", nil
 	}
 	return matches[1], nil
 }

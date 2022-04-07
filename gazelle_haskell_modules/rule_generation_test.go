@@ -84,8 +84,11 @@ func TestGetSrcsFromCommentsOneDirectiveMultipleSrc(t *testing.T) {
 
 func TestGetSrcsFromCommentsDirectiveNotLeading(t *testing.T) {
 	input := []string{"# pesho " + PRIVATE_FIND_MODULES_DIRECTIVE + " src/", "## foo", "# pirin"}
-	_, err := getSrcDirsFromComments(input)
-	if err == nil {
-		t.Fatalf("expected getSrcDirsFromComments to fail when the directive isn't leading")
+	srcs, err := getSrcDirsFromComments(input)
+	if err != nil {
+		t.Fatalf("expected getSrcDirsFromComments to not fail when the directive isn't leading")
+	}
+	if len(srcs) != 0 {
+		t.Fatalf("expected getSrcDirsFromComments to return no src folders when the directive isn't leading")
 	}
 }
