@@ -174,6 +174,7 @@ scanTokenStream fp toks =
       _ -> Nothing
 
     parseImportTail = do
+      optional $ satisfy "qualified" $ \case ITqualified -> Just (); _ -> Nothing
       optional $ do
         satisfy "as" $ \case ITas -> Just (); _ -> Nothing
         parseModuleName

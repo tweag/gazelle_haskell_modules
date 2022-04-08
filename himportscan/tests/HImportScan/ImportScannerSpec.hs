@@ -79,6 +79,14 @@ spec_scanImports = do
          import A.B.C
          import A.B.D
       |]
+    it "should accept post fix qualified imports" $
+      testSource "M" [m "A.B.C", m "A.B.D", m "A.B.E"] False [s|
+         module M where
+
+         import A.B.C
+         import A.B.D qualified
+         import A.B.E
+        |]
     it "should accept package imports" $
       testSource
         "M"
