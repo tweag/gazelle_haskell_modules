@@ -113,6 +113,8 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":package-c",
+        ":check-package-c-explicit-srcs",
+        ":check-package-c-multiple-srcs",
         "@stackage//:base",
         "@stackage//:tasty",
         "@stackage//:tasty-hunit",
@@ -134,4 +136,22 @@ haskell_module(
     src = "add-module-src/PackageC/Other/B.hs",
     src_strip_prefix = "add-module-src",
     visibility = ["//visibility:public"],
+)
+
+haskell_library(
+    name = "check-package-c-explicit-srcs",
+    srcs = ["checksrc/CheckPackageCExplicit.hs"],
+    deps = [
+        "@stackage//:base",
+        ":package-c-explicit-srcs",
+    ],
+)
+
+haskell_library(
+    name = "check-package-c-multiple-srcs",
+    srcs = ["checksrc/CheckPackageCMultipleSrcs.hs"],
+    deps = [
+        "@stackage//:base",
+        ":package-c-multiple-srcs",
+    ],
 )
