@@ -35,8 +35,7 @@ func (*gazelleHaskellModulesLang) RegisterFlags(fs *flag.FlagSet, cmd string, c 
 func (*gazelleHaskellModulesLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error { return nil }
 
 func (*gazelleHaskellModulesLang) KnownDirectives() []string {
-	return []string{
-	}
+	return []string{}
 }
 
 type Config struct {
@@ -52,8 +51,7 @@ func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rul
 	if ok {
 		extraConfig = m.(Config)
 	} else {
-		extraConfig = Config{
-		}
+		extraConfig = Config{}
 	}
 
 	for _, directive := range f.Directives {
@@ -67,10 +65,10 @@ var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"modules":        true,
-		"deps":           true,
-		"narrowed_deps":  true,
-		"srcs":           true,
+		"modules":       true,
+		"deps":          true,
+		"narrowed_deps": true,
+		"srcs":          true,
 	},
 }
 
@@ -112,7 +110,7 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	if r.Kind() == "haskell_module" {
 		originatingRules := getOriginatingRules(r)
-		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), 2*len(originatingRules) + 1)
+		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), 2*len(originatingRules)+1)
 		for i, originatingRule := range originatingRules {
 			moduleSpecs[i] = moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))
 		}
@@ -120,7 +118,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			if originatingRule.Kind() == "haskell_library" {
 				moduleSpecs = append(
 					moduleSpecs,
-					moduleByModuleImportSpec(&ModuleImport{getPackageNameFromRule(originatingRule),getModuleNameFromRule(r)}),
+					moduleByModuleImportSpec(&ModuleImport{getPackageNameFromRule(originatingRule), getModuleNameFromRule(r)}),
 				)
 			}
 		}
@@ -148,7 +146,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		} else {
 			usesModules = 0
 		}
-		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels) + len(libraryDepLabels) + usesModules)
+		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels)+len(libraryDepLabels)+usesModules)
 		i := 0
 		for moduleLabel := range moduleLabels {
 			moduleSpecs[i] = libraryOfModuleSpec(moduleLabel)
@@ -156,11 +154,11 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 		i = 0
 		for libLabel := range libraryDepLabels {
-			moduleSpecs[len(moduleLabels) + i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
+			moduleSpecs[len(moduleLabels)+i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
 			i++
 		}
 		if usesModules > 0 {
-			moduleSpecs[len(moduleSpecs) - 1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
+			moduleSpecs[len(moduleSpecs)-1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
 		}
 		return moduleSpecs
 	} else {
@@ -219,7 +217,6 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 	f.Sync()
 }
 
-
 ////////////////////////////////
 // Indexing
 ////////////////////////////////
@@ -246,7 +243,7 @@ func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string 
 	}
 	src, err := filepath.Rel(repoRoot, path.Join(path.Dir(buildFilePath), r.AttrString("src")))
 	if err != nil {
-		log.Fatal("Reading src of " + r.Name(), err)
+		log.Fatal("Reading src of "+r.Name(), err)
 	}
 	return src
 }

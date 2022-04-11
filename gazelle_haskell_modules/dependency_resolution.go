@@ -190,15 +190,15 @@ func findCrossLibraryModuleLabelByModuleName(
 					lbls[i] = r1.Label
 				}
 				return nil, fmt.Errorf("Multiple rules define %q:%s in narrowed deps of %v and %v: %v and %v with narrowed_deps %v and %v",
-							  moduleImport.PackageName,
-							  moduleImport.ModuleName,
-							  foundOriginalLibLabel,
-							  originalLib,
-							  foundLabel,
-							  r.Label,
-							  foundNarrowedLibLabel,
-							  narrowedLib,
-						  )
+					moduleImport.PackageName,
+					moduleImport.ModuleName,
+					foundOriginalLibLabel,
+					originalLib,
+					foundLabel,
+					r.Label,
+					foundNarrowedLibLabel,
+					narrowedLib,
+				)
 			} else {
 				foundLabel = r.Label
 				foundNarrowedLibLabel = *narrowedLib
@@ -275,28 +275,28 @@ func doesLibraryUseModules(ix *resolve.RuleIndex, libraryLabel label.Label) bool
 }
 
 func libraryUsesModulesSpec(libLabel label.Label) resolve.ImportSpec {
-	return resolve.ImportSpec {
+	return resolve.ImportSpec{
 		gazelleHaskellModulesName,
 		fmt.Sprintf("library_uses_modules:%s", libLabel.String()),
 	}
 }
 
 func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
-	return resolve.ImportSpec {
+	return resolve.ImportSpec{
 		gazelleHaskellModulesName,
 		fmt.Sprintf("library_of_module:%s", moduleLabel.String()),
 	}
 }
 
 func moduleByModuleImportSpec(moduleImport *ModuleImport) resolve.ImportSpec {
-	return resolve.ImportSpec {
+	return resolve.ImportSpec{
 		gazelleHaskellModulesName,
 		fmt.Sprintf("module_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
 	}
 }
 
 func moduleByPackageImportSpec(pkgName string, moduleName string) resolve.ImportSpec {
-	return resolve.ImportSpec {
+	return resolve.ImportSpec{
 		gazelleHaskellModulesName,
 		fmt.Sprintf("module_name:%s:%s", pkgName, moduleName),
 	}
@@ -326,7 +326,7 @@ func isDepOfAnyLibrary(ix *resolve.RuleIndex, depLabels []label.Label, libs []la
 }
 
 func isDepOfLibrarySpec(dep label.Label, pkg string, libName string) resolve.ImportSpec {
-	return resolve.ImportSpec {
+	return resolve.ImportSpec{
 		gazelleHaskellModulesName,
 		fmt.Sprintf("is_dep_of:%s:%s:%s", dep.String(), pkg, libName),
 	}
