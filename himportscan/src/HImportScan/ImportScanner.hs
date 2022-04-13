@@ -26,6 +26,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import qualified Data.Text.Encoding as Text
 import HImportScan.GHC as GHC
+import System.Directory (doesFileExist)
 import Text.Parsec hiding (satisfy)
 import Text.Parsec.Pos (newPos)
 
@@ -60,8 +61,15 @@ instance Aeson.ToJSON ModuleImport where
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
 -- all of the import declarations.
-scanImportsFromFile :: FilePath -> IO ScannedImports
-scanImportsFromFile filePath = scanImports filePath <$> Text.readFile filePath
+-- If a file is missing, we return 'Nothing'.
+-- TODO: It would be better to give more information on the missing file,
+-- to report to the user.
+scanImportsFromFile :: FilePath -> IO (Maybe ScannedImports)
+scanImportsFromFile filePath = do
+  fileExists <- doesFileExist filePath
+  if fileExists
+  then Just . scanImports filePath <$> Text.readFile filePath
+  else pure Nothing
 
 scanImports :: FilePath -> Text -> ScannedImports
 scanImports filePath contents =
