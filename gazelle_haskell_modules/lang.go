@@ -213,8 +213,27 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 				r.Delete()
 			}
 		}
+		fixModuleLists(r, ruleNameSet)
 	}
+
 	f.Sync()
+}
+
+// Leaves only those modules from r that are in ruleNameSet.
+// If a module is not in ruleNameSet, that means that there was no info associated with it,
+// hence it should be deleted.
+func fixModuleLists(r *rule.Rule, ruleNameSet map[string]bool) {
+	modules := r.AttrStrings("modules")
+	if modules != nil {
+		nonDeletedModules := make([]string, 0, len(modules))
+		for _, module := range modules {
+			// TODO: use labels instead of manually stripping away the ':' ?
+			if ruleNameSet[module[1:]] {
+				nonDeletedModules = append(nonDeletedModules, module)
+			}
+		}
+		r.SetAttr("modules", nonDeletedModules)
+	}
 }
 
 ////////////////////////////////
