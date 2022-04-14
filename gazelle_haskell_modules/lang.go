@@ -3,6 +3,7 @@ package gazelle_haskell_modules
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -214,6 +215,7 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 			}
 		}
 		fixModulesList(r, ruleNameSet)
+		fixHiddenModulesList(r, ruleNameSet)
 	}
 
 	f.Sync()
@@ -223,6 +225,13 @@ func fixModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	// TODO: use labels instead of manually stripping away the ':' ?
 	stripColon := func(module string) string { return module[1:] }
 	fixModulesLists(r, ruleNameSet, "modules", stripColon)
+}
+
+func fixHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+	ruleName := r.Name()
+	// TODO: use something better?
+	addPackageName := func(module string) string { return fmt.Sprintf(":%s.%s", ruleName, module) }
+	fixModulesLists(r, ruleNameSet, "hidden_modules", addPackageName)
 }
 
 // Leaves only those modules from r that are in ruleNameSet according to toRuleName.
