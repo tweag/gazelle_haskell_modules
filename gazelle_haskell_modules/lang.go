@@ -213,26 +213,37 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 				r.Delete()
 			}
 		}
-		fixModuleLists(r, ruleNameSet)
+		fixModulesList(r, ruleNameSet)
 	}
 
 	f.Sync()
 }
 
-// Leaves only those modules from r that are in ruleNameSet.
+func fixModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+	// TODO: use labels instead of manually stripping away the ':' ?
+	stripColon := func(module string) string { return module[1:] }
+	fixModulesLists(r, ruleNameSet, "modules", stripColon)
+}
+
+// Leaves only those modules from r that are in ruleNameSet according to toRuleName.
 // If a module is not in ruleNameSet, that means that there was no info associated with it,
 // hence it should be deleted.
-func fixModuleLists(r *rule.Rule, ruleNameSet map[string]bool) {
-	modules := r.AttrStrings("modules")
+//
+// modulesFieldName is expected to be "modules" or "hidden_modules".
+func fixModulesLists(r *rule.Rule, ruleNameSet map[string]bool, modulesFieldName string, toRuleName func(string) string) {
+	modules := r.AttrStrings(modulesFieldName)
 	if modules != nil {
 		nonDeletedModules := make([]string, 0, len(modules))
 		for _, module := range modules {
-			// TODO: use labels instead of manually stripping away the ':' ?
-			if ruleNameSet[module[1:]] {
+			if ruleNameSet[toRuleName(module)] {
 				nonDeletedModules = append(nonDeletedModules, module)
 			}
 		}
-		r.SetAttr("modules", nonDeletedModules)
+		if len(nonDeletedModules) > 0 {
+			r.SetAttr(modulesFieldName, nonDeletedModules)
+		} else {
+			r.DelAttr(modulesFieldName)
+		}
 	}
 }
 
