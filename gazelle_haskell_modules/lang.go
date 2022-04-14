@@ -214,24 +214,24 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 				r.Delete()
 			}
 		}
-		fixModulesList(r, ruleNameSet)
-		fixHiddenModulesList(r, ruleNameSet)
+		cleanupModulesList(r, ruleNameSet)
+		cleanupHiddenModulesList(r, ruleNameSet)
 	}
 
 	f.Sync()
 }
 
-func fixModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	// TODO: use labels instead of manually stripping away the ':' ?
 	stripColon := func(module string) string { return module[1:] }
-	fixModulesLists(r, ruleNameSet, "modules", stripColon)
+	cleanupModulesLists(r, ruleNameSet, "modules", stripColon)
 }
 
-func fixHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+func cleanupHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	ruleName := r.Name()
 	// TODO: use something better?
 	addPackageName := func(module string) string { return fmt.Sprintf(":%s.%s", ruleName, module) }
-	fixModulesLists(r, ruleNameSet, "hidden_modules", addPackageName)
+	cleanupModulesLists(r, ruleNameSet, "hidden_modules", addPackageName)
 }
 
 // Leaves only those modules from r that are in ruleNameSet according to toRuleName.
@@ -239,7 +239,7 @@ func fixHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 // hence it should be deleted.
 //
 // modulesFieldName is expected to be "modules" or "hidden_modules".
-func fixModulesLists(r *rule.Rule, ruleNameSet map[string]bool, modulesFieldName string, toRuleName func(string) string) {
+func cleanupModulesLists(r *rule.Rule, ruleNameSet map[string]bool, modulesFieldName string, toRuleName func(string) string) {
 	modules := r.AttrStrings(modulesFieldName)
 	if modules != nil {
 		nonDeletedModules := make([]string, 0, len(modules))
