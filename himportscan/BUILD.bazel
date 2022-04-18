@@ -16,6 +16,8 @@ haskell_toolchain_library(name = "ghc")
 
 haskell_toolchain_library(name = "text")
 
+haskell_toolchain_library(name = "ghc-boot-th")
+
 haskell_library(
     name = "himportscan-library",
     srcs = glob(["src/**/*.hs"]),
@@ -27,6 +29,7 @@ haskell_library(
         ":base",
         ":bytestring",
         ":ghc",
+        ":ghc-boot-th",
         ":text",
         "@io_tweag_gazelle_haskell_modules_deps//:aeson",
         "@io_tweag_gazelle_haskell_modules_deps//:parsec",

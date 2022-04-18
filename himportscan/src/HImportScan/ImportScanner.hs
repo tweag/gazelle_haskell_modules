@@ -8,6 +8,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP #-}
 
 module HImportScan.ImportScanner
   ( ScannedImports(..)
@@ -142,8 +143,13 @@ scanTokenStream fp toks =
     parseLanguagePragma :: Parsec [Located Token] () [String]
     parseLanguagePragma = do
       satisfyEvenComments "LANGUAGE pragma" $ \case
+#if __GLASGOW_HASKELL__ >= 902
+        ITblockComment s _ -> Just (getLanguageExtensionsMaybe s)
+        ITlineComment _ _ -> Just []
+#else
         ITblockComment s -> Just (getLanguageExtensionsMaybe s)
         ITlineComment _ -> Just []
+#endif
         _ -> Nothing
 
     parseModuleHeader = do
@@ -198,8 +204,13 @@ scanTokenStream fp toks =
     comment :: Parsec [Located Token] () String
     comment =
       satisfyEvenComments "comment" (\case
+#if __GLASGOW_HASKELL__ >= 902
+        ITblockComment c _ -> Just c
+        ITlineComment c _ -> Just c
+#else
         ITblockComment c -> Just c
         ITlineComment c -> Just c
+#endif
         _ -> Nothing
       ) <* optional (satisfyEvenComments ";" $ \case ITsemi -> Just (); _ -> Nothing)
 
@@ -207,7 +218,11 @@ scanTokenStream fp toks =
     locToSourcePos loc =
       let srcSpan = getLoc loc
        in case srcSpanStart srcSpan of
+#if __GLASGOW_HASKELL__ >= 900
+            RealSrcLoc realSrcLoc _ ->
+#else
             RealSrcLoc realSrcLoc ->
+#endif
               newPos fp (srcLocLine realSrcLoc) (srcLocCol realSrcLoc)
             _ ->
               newPos fp 0 0
@@ -235,15 +250,14 @@ getLanguageExtensionsMaybe = \case
 lexTokenStream :: StringBuffer -> RealSrcLoc -> [Located Token]
 lexTokenStream buf loc =
   let allExtensions = [minBound..maxBound]
-      parserFlags = mkParserFlags'
+      parserFlags = mkParserOpts
         GHC.empty
         (GHC.fromList allExtensions)
-        (error "lexTokenStreamUnitId")
         False
         False
         True
         True
-      initState = mkPStatePure parserFlags buf loc
+      initState = initParserState parserFlags buf loc
    in go initState
   where
     go st = case unP (lexer False return) st of
