@@ -224,7 +224,7 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	// TODO: use labels instead of manually stripping away the ':' ?
 	stripColon := func(module string) string {
-		if len(module) > 0 && module[1] == byte(':') {
+		if len(module) > 0 && module[0] == byte(':') {
 			return module[1:]
 		} else {
 			return module
