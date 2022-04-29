@@ -1,2 +1,5 @@
-{-# LANGUAGE CPP #-}
-{-# OPTIONS_GHC -F -pgmF TASTY_DISCOVER_TASTY_DISCOVER_PATH #-}
+import PackageB.Exposed.A ()
+import PackageB.Other.D ()
+
+main :: IO ()
+main = return ()
