@@ -214,7 +214,7 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 				r.Delete()
 			}
 		}
-		if isNonHaskellModule(r.Kind()) {
+		if shouldModularize(r) && isNonHaskellModule(r.Kind()) {
 			cleanupModulesList(r, ruleNameSet)
 			cleanupHiddenModulesList(r, ruleNameSet)
 		}

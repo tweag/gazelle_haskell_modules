@@ -4,13 +4,18 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 # Test that when the src for a module is deleted, the fix command
 # will
 # * remove the haskell_module
-# * remove the mentions of the haskell_module from the modules of other targets.
+# * remove the mentions of the haskell_module from the modules of other targets
+# * leave alone haskell_library/binary/test rules marked with keep
 #
 # In this package, src/PackageB/Other/B.hs has been deleted, and hence
 # fix-cleanup-modules.PackageB.Other.B
 # should be deleted and removed from the modules list and hidden_modules list of fix-cleanup-modules.
 #
 # The build will fail if this does not happen, as we are referencing a non-existent file.
+#
+# Similarly, if hidden_modules which are not meant to be deleted aren't preserved,
+# GHC will complain about ambiguity when building test, since two dependencies
+# exposing PackageB.Other.D would exist.
 
 
 haskell_library(
@@ -42,6 +47,31 @@ haskell_library(
 )
 
 # gazelle_haskell_modules:keep
+haskell_library(
+    name = "left-alone",
+    compiler_flags = [
+        "-DVERSION_package_b=\"0.1.0.0\"",
+        "-XScopedTypeVariables",
+        "-lm",
+    ],
+    hidden_modules = [
+        "PackageB.Exposed.A",
+    ],
+    srcs = [
+        "src/PackageB/Exposed/A.hs",
+        "src/PackageB/Other/D.hs",
+    ],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//package-a",
+        "//package-a:package-a-v2",
+        "@stackage//:base",
+        "@stackage//:void",
+    ],
+)
+
+# gazelle_haskell_modules:keep
 haskell_test(
     name = "test",
     srcs = [
@@ -57,6 +87,7 @@ haskell_test(
     visibility = ["//visibility:public"],
     deps = [
         ":fix-cleanup-modules",
+        ":left-alone",
         "@stackage//:base",
         "@stackage//:tasty",
         "@stackage//:tasty-hunit",
