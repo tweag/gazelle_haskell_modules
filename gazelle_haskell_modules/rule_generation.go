@@ -130,7 +130,7 @@ func haskellModuleRulesToRuleInfos(
 			r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
 			r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
 		} else {
-			log.Printf("found no module data for haskell_module %s\n", r.Name())
+			log.Printf("warning: found no module source for haskell_module rule %s: %q\n", r.Name(), src)
 		}
 	}
 	return ruleInfoss
