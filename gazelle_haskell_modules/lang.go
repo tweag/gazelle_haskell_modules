@@ -214,8 +214,10 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 				r.Delete()
 			}
 		}
-		cleanupModulesList(r, ruleNameSet)
-		cleanupHiddenModulesList(r, ruleNameSet)
+		if isNonHaskellModule(r.Kind()) {
+			cleanupModulesList(r, ruleNameSet)
+			cleanupHiddenModulesList(r, ruleNameSet)
+		}
 	}
 
 	f.Sync()
