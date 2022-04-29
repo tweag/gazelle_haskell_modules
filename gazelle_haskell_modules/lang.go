@@ -236,7 +236,7 @@ func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 func cleanupHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	ruleName := r.Name()
 	// TODO: use something better?
-	addPackageName := func(module string) string { return fmt.Sprintf(":%s.%s", ruleName, module) }
+	addPackageName := func(module string) string { return fmt.Sprintf("%s.%s", ruleName, module) }
 	cleanupModulesLists(r, ruleNameSet, "hidden_modules", addPackageName)
 }
 
