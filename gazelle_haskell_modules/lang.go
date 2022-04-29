@@ -3,6 +3,7 @@ package gazelle_haskell_modules
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -35,8 +36,7 @@ func (*gazelleHaskellModulesLang) RegisterFlags(fs *flag.FlagSet, cmd string, c 
 func (*gazelleHaskellModulesLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error { return nil }
 
 func (*gazelleHaskellModulesLang) KnownDirectives() []string {
-	return []string{
-	}
+	return []string{}
 }
 
 type Config struct {
@@ -52,8 +52,7 @@ func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rul
 	if ok {
 		extraConfig = m.(Config)
 	} else {
-		extraConfig = Config{
-		}
+		extraConfig = Config{}
 	}
 
 	for _, directive := range f.Directives {
@@ -67,10 +66,10 @@ var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"modules":        true,
-		"deps":           true,
-		"narrowed_deps":  true,
-		"srcs":           true,
+		"modules":       true,
+		"deps":          true,
+		"narrowed_deps": true,
+		"srcs":          true,
 	},
 }
 
@@ -112,7 +111,7 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	if r.Kind() == "haskell_module" {
 		originatingRules := getOriginatingRules(r)
-		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), 2*len(originatingRules) + 1)
+		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), 2*len(originatingRules)+1)
 		for i, originatingRule := range originatingRules {
 			moduleSpecs[i] = moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))
 		}
@@ -120,7 +119,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			if originatingRule.Kind() == "haskell_library" {
 				moduleSpecs = append(
 					moduleSpecs,
-					moduleByModuleImportSpec(&ModuleImport{getPackageNameFromRule(originatingRule),getModuleNameFromRule(r)}),
+					moduleByModuleImportSpec(&ModuleImport{getPackageNameFromRule(originatingRule), getModuleNameFromRule(r)}),
 				)
 			}
 		}
@@ -148,7 +147,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		} else {
 			usesModules = 0
 		}
-		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels) + len(libraryDepLabels) + usesModules)
+		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels)+len(libraryDepLabels)+usesModules)
 		i := 0
 		for moduleLabel := range moduleLabels {
 			moduleSpecs[i] = libraryOfModuleSpec(moduleLabel)
@@ -156,11 +155,11 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 		i = 0
 		for libLabel := range libraryDepLabels {
-			moduleSpecs[len(moduleLabels) + i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
+			moduleSpecs[len(moduleLabels)+i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
 			i++
 		}
 		if usesModules > 0 {
-			moduleSpecs[len(moduleSpecs) - 1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
+			moduleSpecs[len(moduleSpecs)-1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
 		}
 		return moduleSpecs
 	} else {
@@ -215,10 +214,55 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 				r.Delete()
 			}
 		}
+		if isNonHaskellModule(r.Kind()) {
+			cleanupModulesList(r, ruleNameSet)
+			cleanupHiddenModulesList(r, ruleNameSet)
+		}
 	}
+
 	f.Sync()
 }
 
+func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+	// TODO: use labels instead of manually stripping away the ':' ?
+	shouldKeep := func(module string) bool {
+		if len(module) > 0 && module[0] == byte(':') {
+			return ruleNameSet[module[1:]]
+		} else {
+			return true
+		}
+	}
+	cleanupModulesLists(r, "modules", shouldKeep)
+}
+
+func cleanupHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+	ruleName := r.Name()
+	// TODO: use something better?
+	shouldKeep := func(module string) bool { return ruleNameSet[fmt.Sprintf("%s.%s", ruleName, module)] }
+	cleanupModulesLists(r, "hidden_modules", shouldKeep)
+}
+
+// Leaves only those modules from r that satisfy the given predicate shouldKeep.
+//
+// modulesFieldName is expected to be "modules" or "hidden_modules".
+//
+// The field is removed if all the modules/labels are dropped from the list.
+func cleanupModulesLists(r *rule.Rule, modulesFieldName string, shouldKeep func(string) bool) {
+	modules := r.AttrStrings(modulesFieldName)
+	if modules != nil {
+		nonDeletedModules := make([]string, 0, len(modules))
+		for _, module := range modules {
+			if shouldKeep(module) {
+				nonDeletedModules = append(nonDeletedModules, module)
+			}
+		}
+		if len(nonDeletedModules) > 0 {
+			r.SetAttr(modulesFieldName, nonDeletedModules)
+		} else {
+			r.DelAttr(modulesFieldName)
+		}
+	}
+}
 
 ////////////////////////////////
 // Indexing
@@ -246,7 +290,7 @@ func getSrcFromRule(repoRoot string, buildFilePath string, r *rule.Rule) string 
 	}
 	src, err := filepath.Rel(repoRoot, path.Join(path.Dir(buildFilePath), r.AttrString("src")))
 	if err != nil {
-		log.Fatal("Reading src of " + r.Name(), err)
+		log.Fatal("Reading src of "+r.Name(), err)
 	}
 	return src
 }

@@ -42,6 +42,8 @@ jobs:
         run: nix-shell --pure --run 'bazel test //himportscan:tasty'
       - name: Build & run gazelle
         run: cd example; nix-shell --pure --run 'bazel run //:gazelle'
+      - name: Build & run gazelle fix
+        run: cd example; nix-shell --pure --run 'bazel run //:gazelle -- fix'
       - name: Build & test generated rules
         run: cd example; nix-shell --pure --run 'bazel test //...'
       - name: Build & run gazelle with alternative dependencies

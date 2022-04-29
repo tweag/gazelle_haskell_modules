@@ -119,15 +119,19 @@ func haskellModuleRulesToRuleInfos(
 		}
 
 		modDatas := haskellModulesToModuleData([]string{src})
-		ruleInfo := RuleInfo{
-			OriginatingRules: oRules,
-			ModuleData:       modDatas[0],
+		if len(modDatas) > 0 {
+			ruleInfo := RuleInfo{
+				OriginatingRules: oRules,
+				ModuleData:       modDatas[0],
+			}
+
+			ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
+
+			r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
+			r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
+		} else {
+			log.Printf("warning: found no module source for haskell_module rule %s: %q\n", r.Name(), src)
 		}
-
-		ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
-
-		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
-		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
 	}
 	return ruleInfoss
 }
@@ -137,6 +141,8 @@ const HIMPORTSCAN_PATH = "himportscan/himportscan"
 // Collects the imported modules from every sourcefile
 //
 // Module file paths must be absolute.
+//
+// If a source file is missing we don't return ModuleData for it.
 func haskellModulesToModuleData(moduleFiles []string) []*ModuleData {
 	himportscan, err := bazel.Runfile(HIMPORTSCAN_PATH)
 	if err != nil {

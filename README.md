@@ -119,6 +119,9 @@ Gazelle's [fix command][fix-command] can be used to delete
 test. At the moment, the `fix` command only looks for enclosing
 rules in the same `BUILD` file containing the `haskell_module` rule.
 
+Additionally, fix will also remove `haskell_module`s whose src files have been deleted, as well as
+removing those modules from places where they are referenced.
+
 ## Rule generation
 
 ### Finding source files
