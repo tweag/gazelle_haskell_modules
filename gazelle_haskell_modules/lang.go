@@ -223,34 +223,34 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 
 func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	// TODO: use labels instead of manually stripping away the ':' ?
-	stripColon := func(module string) string {
+	shouldKeep := func(module string) bool {
 		if len(module) > 0 && module[0] == byte(':') {
-			return module[1:]
+			return ruleNameSet[module[1:]]
 		} else {
-			return module
+			return ruleNameSet[module]
 		}
 	}
-	cleanupModulesLists(r, ruleNameSet, "modules", stripColon)
+	cleanupModulesLists(r, "modules", shouldKeep)
 }
 
 func cleanupHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	ruleName := r.Name()
 	// TODO: use something better?
-	addPackageName := func(module string) string { return fmt.Sprintf("%s.%s", ruleName, module) }
-	cleanupModulesLists(r, ruleNameSet, "hidden_modules", addPackageName)
+	shouldKeep := func(module string) bool { return ruleNameSet[fmt.Sprintf("%s.%s", ruleName, module)] }
+	cleanupModulesLists(r, "hidden_modules", shouldKeep)
 }
 
-// Leaves only those modules from r that are in ruleNameSet according to toRuleName.
-// If a module is not in ruleNameSet, that means that there was no info associated with it,
-// hence it should be deleted.
+// Leaves only those modules from r that satisfy the given predicate shouldKeep.
 //
 // modulesFieldName is expected to be "modules" or "hidden_modules".
-func cleanupModulesLists(r *rule.Rule, ruleNameSet map[string]bool, modulesFieldName string, toRuleName func(string) string) {
+//
+// The field is removed if all the modules/labels are dropped from the list.
+func cleanupModulesLists(r *rule.Rule, modulesFieldName string, shouldKeep func(string) bool) {
 	modules := r.AttrStrings(modulesFieldName)
 	if modules != nil {
 		nonDeletedModules := make([]string, 0, len(modules))
 		for _, module := range modules {
-			if ruleNameSet[toRuleName(module)] {
+			if shouldKeep(module) {
 				nonDeletedModules = append(nonDeletedModules, module)
 			}
 		}
