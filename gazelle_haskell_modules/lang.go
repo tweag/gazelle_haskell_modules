@@ -227,7 +227,7 @@ func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 		if len(module) > 0 && module[0] == byte(':') {
 			return ruleNameSet[module[1:]]
 		} else {
-			return ruleNameSet[module]
+			return true
 		}
 	}
 	cleanupModulesLists(r, "modules", shouldKeep)
