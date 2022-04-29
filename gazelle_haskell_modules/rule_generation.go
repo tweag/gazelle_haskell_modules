@@ -119,7 +119,7 @@ func haskellModuleRulesToRuleInfos(
 		}
 
 		modDatas := haskellModulesToModuleData([]string{src})
-		if len(modDatas) == 1 {
+		if len(modDatas) > 0 {
 			ruleInfo := RuleInfo{
 				OriginatingRules: oRules,
 				ModuleData:       modDatas[0],
@@ -129,7 +129,7 @@ func haskellModuleRulesToRuleInfos(
 
 			r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
 			r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
-		} else if len(modDatas) == 0 {
+		} else {
 			log.Printf("found no module data for haskell_module %s\n", r.Name())
 		}
 	}
