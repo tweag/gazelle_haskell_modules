@@ -208,26 +208,32 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 		ruleNameSet[rName] = true
 	}
 
+	deleted := make(map[string]bool)
+
 	for _, r := range f.Rules {
 		if !r.ShouldKeep() && r.Kind() == "haskell_module" {
 			if _, ok := ruleNameSet[r.Name()]; !ok {
 				r.Delete()
+				deleted[r.Name()] = true
 			}
 		}
+	}
+
+	for _, r := range f.Rules {
 		if shouldModularize(r) && isNonHaskellModule(r.Kind()) {
-			cleanupModulesList(r, ruleNameSet)
-			cleanupHiddenModulesList(r, ruleNameSet)
+			cleanupModulesList(r, deleted)
+			cleanupHiddenModulesList(r, deleted)
 		}
 	}
 
 	f.Sync()
 }
 
-func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+func cleanupModulesList(r *rule.Rule, deleted map[string]bool) {
 	// TODO: use labels instead of manually stripping away the ':' ?
 	shouldKeep := func(module string) bool {
 		if len(module) > 0 && module[0] == byte(':') {
-			return ruleNameSet[module[1:]]
+			return !deleted[module[1:]]
 		} else {
 			return true
 		}
@@ -235,10 +241,12 @@ func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
 	cleanupModulesLists(r, "modules", shouldKeep)
 }
 
-func cleanupHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+func cleanupHiddenModulesList(r *rule.Rule, deleted map[string]bool) {
 	ruleName := r.Name()
 	// TODO: use something better?
-	shouldKeep := func(module string) bool { return ruleNameSet[fmt.Sprintf("%s.%s", ruleName, module)] }
+	shouldKeep := func(module string) bool {
+		return !deleted[fmt.Sprintf("%s.%s", ruleName, module)]
+	}
 	cleanupModulesLists(r, "hidden_modules", shouldKeep)
 }
 
