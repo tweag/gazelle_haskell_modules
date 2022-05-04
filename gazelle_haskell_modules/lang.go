@@ -142,7 +142,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 
 		var usesModules int
-		if shouldModularize(r) {
+		if shouldKeep(r) {
 			usesModules = 1
 		} else {
 			usesModules = 0
@@ -220,7 +220,7 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 	}
 
 	for _, r := range f.Rules {
-		if shouldModularize(r) && isNonHaskellModule(r.Kind()) {
+		if shouldKeep(r) && isNonHaskellModule(r.Kind()) {
 			cleanupModulesList(r, deleted)
 			cleanupHiddenModulesList(r, deleted)
 		}
@@ -231,36 +231,36 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 
 func cleanupModulesList(r *rule.Rule, deleted map[string]bool) {
 	// TODO: use labels instead of manually stripping away the ':' ?
-	shouldKeep := func(module string) bool {
+	shouldKeepModule := func(module string) bool {
 		if len(module) > 0 && module[0] == byte(':') {
 			return !deleted[module[1:]]
 		} else {
 			return true
 		}
 	}
-	cleanupModulesLists(r, "modules", shouldKeep)
+	cleanupModulesLists(r, "modules", shouldKeepModule)
 }
 
 func cleanupHiddenModulesList(r *rule.Rule, deleted map[string]bool) {
 	ruleName := r.Name()
 	// TODO: use something better?
-	shouldKeep := func(module string) bool {
+	shouldKeepModule := func(module string) bool {
 		return !deleted[fmt.Sprintf("%s.%s", ruleName, module)]
 	}
-	cleanupModulesLists(r, "hidden_modules", shouldKeep)
+	cleanupModulesLists(r, "hidden_modules", shouldKeepModule)
 }
 
-// Leaves only those modules from r that satisfy the given predicate shouldKeep.
+// Leaves only those modules from r that satisfy the given predicate shouldKeepModule.
 //
 // modulesFieldName is expected to be "modules" or "hidden_modules".
 //
 // The field is removed if all the modules/labels are dropped from the list.
-func cleanupModulesLists(r *rule.Rule, modulesFieldName string, shouldKeep func(string) bool) {
+func cleanupModulesLists(r *rule.Rule, modulesFieldName string, shouldKeepModule func(string) bool) {
 	modules := r.AttrStrings(modulesFieldName)
 	if modules != nil {
 		nonDeletedModules := make([]string, 0, len(modules))
 		for _, module := range modules {
-			if shouldKeep(module) {
+			if shouldKeepModule(module) {
 				nonDeletedModules = append(nonDeletedModules, module)
 			}
 		}

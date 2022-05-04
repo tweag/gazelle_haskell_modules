@@ -50,7 +50,7 @@ func nonHaskellModuleRulesToRuleInfos(
 	originatingRules := make(map[label.Label][]*rule.Rule, 100)
 	// Analyze non-haskell_module rules
 	for _, r := range rules {
-		if !isNonHaskellModule(r.Kind()) || !shouldModularize(r) {
+		if !isNonHaskellModule(r.Kind()) || !shouldKeep(r) {
 			continue
 		}
 		srcs, err := getSrcs(pkgRoot, r)
@@ -208,7 +208,7 @@ func addNonHaskellModuleRules(
 	haskellRules := make([]*rule.Rule, 0, len(rules))
 	imports := make([]interface{}, 0, len(rules))
 	for _, r := range rules {
-		if !shouldModularize(r) {
+		if !shouldKeep(r) {
 			continue
 		}
 		if isNonHaskellModule(r.Kind()) {
@@ -514,7 +514,8 @@ func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
 	return ruleInfo.OriginatingRules[0].Name() + "." + ruleInfo.ModuleData.ModuleName
 }
 
-func shouldModularize(r *rule.Rule) bool {
+// Check for the "usual" keep directive, along with our own custom "# gazelle_haskell_modules:keep".
+func shouldKeep(r *rule.Rule) bool {
 	if r.ShouldKeep() {
 		return false
 	}
