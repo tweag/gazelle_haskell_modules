@@ -241,6 +241,12 @@ func cleanupModulesList(r *rule.Rule, deleted map[string]bool) {
 	cleanupModulesLists(r, "modules", shouldKeepModule)
 }
 
+// Removes from the hidden_modules attribute the modules in the map deleted
+// which are also mentioned in the modules attribute.
+//
+// This function depends on haskell_module rule names following the
+// convention <libname>.<modulename>, where <modulename> is the name
+// of the module that is/was defined by the rule.
 func cleanupHiddenModulesList(r *rule.Rule, deleted map[string]bool) {
 	ruleName := r.Name()
 	modules := r.AttrStrings("modules")
