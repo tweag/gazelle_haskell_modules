@@ -221,8 +221,8 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 
 	for _, r := range f.Rules {
 		if shouldKeep(r) && isNonHaskellModule(r.Kind()) {
-			cleanupModulesList(r, deleted)
 			cleanupHiddenModulesList(r, deleted)
+			cleanupModulesList(r, deleted)
 		}
 	}
 
@@ -243,11 +243,20 @@ func cleanupModulesList(r *rule.Rule, deleted map[string]bool) {
 
 func cleanupHiddenModulesList(r *rule.Rule, deleted map[string]bool) {
 	ruleName := r.Name()
-	// TODO: use something better?
-	shouldKeepModule := func(module string) bool {
-		return !deleted[fmt.Sprintf("%s.%s", ruleName, module)]
+	modules := r.AttrStrings("modules")
+	if modules != nil {
+		modulesSet := make(map[string]bool, len(modules))
+		for _, module := range modules {
+			modulesSet[module] = true
+		}
+
+		// TODO: use something better?
+		shouldKeepModule := func(module string) bool {
+			moduleRuleName := fmt.Sprintf("%s.%s", ruleName, module)
+			return !modulesSet[":" + moduleRuleName] || !deleted[moduleRuleName]
+		}
+		cleanupModulesLists(r, "hidden_modules", shouldKeepModule)
 	}
-	cleanupModulesLists(r, "hidden_modules", shouldKeepModule)
 }
 
 // Leaves only those modules from r that satisfy the given predicate shouldKeepModule.
