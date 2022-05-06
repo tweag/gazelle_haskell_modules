@@ -142,7 +142,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 
 		var usesModules int
-		if shouldModularize(r) {
+		if shouldKeep(r) {
 			usesModules = 1
 		} else {
 			usesModules = 0
@@ -208,51 +208,74 @@ func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
 		ruleNameSet[rName] = true
 	}
 
+	deleted := make(map[string]bool)
+
 	for _, r := range f.Rules {
 		if !r.ShouldKeep() && r.Kind() == "haskell_module" {
 			if _, ok := ruleNameSet[r.Name()]; !ok {
 				r.Delete()
+				deleted[r.Name()] = true
 			}
 		}
-		if shouldModularize(r) && isNonHaskellModule(r.Kind()) {
-			cleanupModulesList(r, ruleNameSet)
-			cleanupHiddenModulesList(r, ruleNameSet)
+	}
+
+	for _, r := range f.Rules {
+		if shouldKeep(r) && isNonHaskellModule(r.Kind()) {
+			cleanupHiddenModulesList(r, deleted)
+			cleanupModulesList(r, deleted)
 		}
 	}
 
 	f.Sync()
 }
 
-func cleanupModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+func cleanupModulesList(r *rule.Rule, deleted map[string]bool) {
 	// TODO: use labels instead of manually stripping away the ':' ?
-	shouldKeep := func(module string) bool {
+	shouldKeepModule := func(module string) bool {
 		if len(module) > 0 && module[0] == byte(':') {
-			return ruleNameSet[module[1:]]
+			return !deleted[module[1:]]
 		} else {
 			return true
 		}
 	}
-	cleanupModulesLists(r, "modules", shouldKeep)
+	cleanupModulesLists(r, "modules", shouldKeepModule)
 }
 
-func cleanupHiddenModulesList(r *rule.Rule, ruleNameSet map[string]bool) {
+// Removes from the hidden_modules attribute the modules in the map deleted
+// which are also mentioned in the modules attribute.
+//
+// This function depends on haskell_module rule names following the
+// convention <libname>.<modulename>, where <modulename> is the name
+// of the module that is/was defined by the rule.
+func cleanupHiddenModulesList(r *rule.Rule, deleted map[string]bool) {
 	ruleName := r.Name()
-	// TODO: use something better?
-	shouldKeep := func(module string) bool { return ruleNameSet[fmt.Sprintf("%s.%s", ruleName, module)] }
-	cleanupModulesLists(r, "hidden_modules", shouldKeep)
+	modules := r.AttrStrings("modules")
+	if modules != nil {
+		modulesSet := make(map[string]bool, len(modules))
+		for _, module := range modules {
+			modulesSet[module] = true
+		}
+
+		// TODO: use something better?
+		shouldKeepModule := func(module string) bool {
+			moduleRuleName := fmt.Sprintf("%s.%s", ruleName, module)
+			return !modulesSet[":" + moduleRuleName] || !deleted[moduleRuleName]
+		}
+		cleanupModulesLists(r, "hidden_modules", shouldKeepModule)
+	}
 }
 
-// Leaves only those modules from r that satisfy the given predicate shouldKeep.
+// Leaves only those modules from r that satisfy the given predicate shouldKeepModule.
 //
 // modulesFieldName is expected to be "modules" or "hidden_modules".
 //
 // The field is removed if all the modules/labels are dropped from the list.
-func cleanupModulesLists(r *rule.Rule, modulesFieldName string, shouldKeep func(string) bool) {
+func cleanupModulesLists(r *rule.Rule, modulesFieldName string, shouldKeepModule func(string) bool) {
 	modules := r.AttrStrings(modulesFieldName)
 	if modules != nil {
 		nonDeletedModules := make([]string, 0, len(modules))
 		for _, module := range modules {
-			if shouldKeep(module) {
+			if shouldKeepModule(module) {
 				nonDeletedModules = append(nonDeletedModules, module)
 			}
 		}
