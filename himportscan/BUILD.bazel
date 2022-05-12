@@ -18,6 +18,10 @@ haskell_toolchain_library(name = "directory")
 
 haskell_toolchain_library(name = "ghc")
 
+# Only necessary to be able to import GHC.Platform in HImportScan.GHC.Settings
+# TODO[GL]: we can probably remove this once we only support ghc >=9.2
+haskell_toolchain_library(name = "ghc-boot")
+
 haskell_toolchain_library(name = "text")
 
 haskell_library(
@@ -33,6 +37,7 @@ haskell_library(
         ":containers",
         ":directory",
         ":ghc",
+        ":ghc-boot",
         ":text",
         "@io_tweag_gazelle_haskell_modules_deps//:aeson",
         "@io_tweag_gazelle_haskell_modules_deps//:parsec",

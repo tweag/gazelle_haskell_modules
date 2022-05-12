@@ -2,7 +2,9 @@
 module HImportScan.GHC(module X) where
 
 import EnumSet as X (empty, fromList)
-import FastString as X (mkFastString, unpackFS)
+import ErrUtils as X (printBagOfErrors)
+import FastString as X (FastString, mkFastString, unpackFS)
+import HeaderInfo as X (getOptions, getImports)
 import Lexer as X
   ( ParseResult(..)
   , Token(..)
@@ -11,6 +13,7 @@ import Lexer as X
   , mkParserFlags'
   , mkPStatePure, unP
   )
+import Module as X (ModuleName)
 import SrcLoc as X
   ( Located
   , RealSrcLoc
@@ -22,4 +25,4 @@ import SrcLoc as X
   , srcSpanStart
   , unLoc
   )
-import StringBuffer as X (StringBuffer(StringBuffer))
+import StringBuffer as X (StringBuffer(StringBuffer), stringToStringBuffer)

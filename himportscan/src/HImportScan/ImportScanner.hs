@@ -17,8 +17,7 @@ module HImportScan.ImportScanner
   ) where
 
 import qualified Data.Aeson as Aeson
-import Data.ByteString.Internal(ByteString(..))
-import Data.Char (isAlphaNum, isSpace, toLower)
+import Data.Char (toLower)
 import Data.List (isSuffixOf)
 import Data.Maybe (catMaybes)
 import Data.Set (Set)
@@ -26,12 +25,9 @@ import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
-import qualified Data.Text.Encoding as Text
 import HImportScan.GHC as GHC
+import qualified HImportScan.GHC.Utils as GHC.Utils
 import System.Directory (doesFileExist)
-import Text.Parsec hiding (satisfy)
-import Text.Parsec.Pos (newPos)
-
 
 -- | Holds the names of modules imported in a Haskell module.
 data ScannedImports = ScannedImports
@@ -69,26 +65,55 @@ instance Aeson.ToJSON ModuleImport where
 scanImportsFromFile :: FilePath -> IO (Maybe ScannedImports)
 scanImportsFromFile filePath = do
   fileExists <- doesFileExist filePath
-  if fileExists
-  then Just . scanImports filePath <$> Text.readFile filePath
-  else pure Nothing
+  if not fileExists
+  then pure Nothing
+  else scanImports filePath =<< Text.readFile filePath
 
-scanImports :: FilePath -> Text -> ScannedImports
-scanImports filePath contents =
-  let preprocessedContents = Text.encodeUtf8 $ preprocessContents contents
-      sbuffer = case preprocessedContents of
-        PS ptr offset len -> StringBuffer ptr len offset
-      loc = mkRealSrcLoc (mkFastString filePath) 1 1
-   in case scanTokenStream filePath $ lexTokenStream sbuffer loc of
-    Left err -> error err
-    Right ScannedData{moduleName, importedModules, usesTH} ->
-      ScannedImports
-        { filePath = Text.pack filePath
-        , moduleName
-        , importedModules
-        , usesTH
-        }
+-- TODO[GL]: This function is only in IO because
+-- * we use printBagOfErrors to report an error, but we can easily factor that out
+-- * getImports is in IO, which in turn is only in IO to throw an error
+--   Perhaps we could raise an issue at ghc to make a pure variant.
+scanImports :: FilePath -> Text -> IO (Maybe ScannedImports)
+scanImports filePath contents = do
+  -- TODO[GL]: going through String just because StringBuffer doesn't have a Text interface is not the best
+  -- we could potentially skip that with more effort (e.g. go through ByteString, which is very similar to a StringBuffer)
+  let sb = GHC.stringToStringBuffer $ Text.unpack $ preprocessContents contents
 
+  -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
+  -- ParserOpts, as getImports no longer depends on DynFlags then.
+  let dynFlags = GHC.Utils.dynFlags
+
+  let
+    -- [GL] The fact that the resulting strings here contain the "-X"s makes me a bit doubtful that this is the right approach,
+    -- but this is what I found for now.
+    usesTH =
+      any (`elem` ["-XTemplateHaskell", "-XQuasiQuotes"]) $
+        map GHC.unLoc $
+          GHC.getOptions dynFlags sb filePath
+  -- TODO: should both of the files here be filePath?
+  GHC.getImports dynFlags sb filePath filePath >>= \case
+    -- It's important that we error in this case, as otherwise the parser has gone terribly wrong probably.
+    -- It's also ok to print the error, as it is usually descriptive and well formatted.
+    -- The way we error here is that we're passing unexpected output to the go library.
+    -- This is far from ideal, however handling this better would require being able to communicate errors better to go.
+    -- TODO[GL]: propagate error instead
+    Left err -> do
+      GHC.printBagOfErrors dynFlags err
+      pure Nothing
+    Right (sourceImports, normalImports, moduleName) -> do
+      pure $ Just ScannedImports
+            { filePath = Text.pack filePath
+            , moduleName = GHC.Utils.moduleNameToText moduleName
+            , importedModules =
+                let
+                  toModuleImport :: (Maybe GHC.FastString, GHC.Located GHC.ModuleName) -> ModuleImport
+                  toModuleImport (mfs, locatedModuleName) =
+                    ModuleImport
+                      (fmap (Text.pack . GHC.unpackFS) mfs)
+                      (GHC.Utils.moduleNameToText locatedModuleName)
+                 in Set.fromList $ map toModuleImport $ sourceImports ++ normalImports
+            , usesTH = usesTH
+            }
   where
     preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
 
@@ -124,139 +149,3 @@ flipBirdTracks f =
     flipBirdTrack :: Text -> Text
     flipBirdTrack xs | Text.isPrefixOf ">" xs = " " <> Text.drop 1 xs
     flipBirdTrack _ = " "
-
-data ScannedData = ScannedData
-    { moduleName :: Text
-    , importedModules :: Set ModuleImport
-    , usesTH :: Bool
-    }
-
-scanTokenStream :: FilePath -> [Located Token] -> Either String ScannedData
-scanTokenStream fp toks =
-  case parse parser fp toks of
-    Left e -> Left (show e)
-    Right a -> Right a
-  where
-    parser = do
-      langExts <- concat <$> many parseLanguagePragma
-      modName <- parseModuleHeader <|> return "Main"
-      optional $ satisfy "virtual brace" $ \case ITvocurly -> Just (); _ -> Nothing
-      skipMany comment
-      imports <- many parseImport
-      return ScannedData
-        { moduleName = modName
-        , importedModules = Set.fromList imports
-        , usesTH = any (`elem` ["TemplateHaskell", "QuasiQuotes"]) langExts
-        }
-
-    parseLanguagePragma :: Parsec [Located Token] () [String]
-    parseLanguagePragma = do
-      satisfyEvenComments "LANGUAGE pragma" $ \case
-        ITblockComment s -> Just (getLanguageExtensionsMaybe s)
-        ITlineComment _ -> Just []
-        _ -> Nothing
-
-    parseModuleHeader = do
-      satisfy "module" $ \case
-        ITmodule -> Just ()
-        _ -> Nothing
-      parseModuleName <* parseHeaderTail
-
-    parseHeaderTail = do
-      skipMany $ satisfy "not where" $ \case ITwhere -> Nothing; _ -> Just ()
-      satisfy "where" $ \case ITwhere -> Just (); _ -> Nothing
-
-    parseModuleName = flip labels ["ITqconid", "ITconid"] $ do
-      satisfy "a module name" $ \case
-        ITqconid (q, n) -> Just $ Text.pack $ unpackFS (q <> "." <> n)
-        ITconid n -> Just $ Text.pack $ unpackFS n
-        _ -> Nothing
-
-    parseImport = do
-      satisfy "import" $ \case ITimport -> Just (); _ -> Nothing
-      optional $ satisfy "qualified" $ \case ITqualified -> Just (); _ -> Nothing
-      maybePackageName <- optionMaybe parseString
-      moduleName <- parseModuleName <* parseImportTail
-      return $ ModuleImport maybePackageName moduleName
-
-    parseString = satisfy "string" $ \case
-      ITstring _ str -> Just $ Text.pack $ unpackFS str
-      _ -> Nothing
-
-    parseImportTail = do
-      optional $ satisfy "qualified" $ \case ITqualified -> Just (); _ -> Nothing
-      optional $ do
-        satisfy "as" $ \case ITas -> Just (); _ -> Nothing
-        parseModuleName
-      optional $ satisfy "hiding" $ \case IThiding -> Just (); _ -> Nothing
-      optional parseNestedParens
-      optional $ satisfy ";" $ \case ITsemi -> Just (); _ -> Nothing
-
-    parseNestedParens = flip label "nested parentheses" $ do
-      satisfy "(" $ \case IToparen -> Just (); _ -> Nothing
-      skipMany $ satisfy "not ( or )" $ \case IToparen -> Nothing; ITcparen -> Nothing; _ -> Just ()
-      skipMany $ do
-        parseNestedParens
-        skipMany $ satisfy "not ( or )" $ \case IToparen -> Nothing; ITcparen -> Nothing; _ -> Just ()
-      satisfy ")" $ \case ITcparen -> Just (); _ -> Nothing
-
-    satisfy lbl f = satisfyEvenComments lbl f <* skipMany comment
-
-    satisfyEvenComments lbl f =
-      token (show . unLoc) locToSourcePos (f . unLoc) <?> lbl
-
-    comment :: Parsec [Located Token] () String
-    comment =
-      satisfyEvenComments "comment" (\case
-        ITblockComment c -> Just c
-        ITlineComment c -> Just c
-        _ -> Nothing
-      ) <* optional (satisfyEvenComments ";" $ \case ITsemi -> Just (); _ -> Nothing)
-
-    locToSourcePos :: Located a -> SourcePos
-    locToSourcePos loc =
-      let srcSpan = getLoc loc
-       in case srcSpanStart srcSpan of
-            RealSrcLoc realSrcLoc ->
-              newPos fp (srcLocLine realSrcLoc) (srcLocCol realSrcLoc)
-            _ ->
-              newPos fp 0 0
-
-getLanguageExtensionsMaybe :: String -> [String]
-getLanguageExtensionsMaybe = \case
-    '{':'-':'#':s0 ->
-      case dropWhile isSpace s0 of
-        'L':'A':'N':'G':'U':'A':'G':'E':x:s1 | isSpace x ->
-          readLanguageExtensions [] s1
-        _ ->
-          []
-    _ ->
-      []
-  where
-    readLanguageExtensions acc s =
-      case takeLanguageExtension s of
-        (e, rest) | not (null e) -> readLanguageExtensions (e : acc) rest
-        _ -> acc
-
-    takeLanguageExtension s =
-      span isAlphaNum $
-      dropWhile (\x -> isSpace x || x == ',') s
-
-lexTokenStream :: StringBuffer -> RealSrcLoc -> [Located Token]
-lexTokenStream buf loc =
-  let allExtensions = [minBound..maxBound]
-      parserFlags = mkParserFlags'
-        GHC.empty
-        (GHC.fromList allExtensions)
-        (error "lexTokenStreamUnitId")
-        False
-        False
-        True
-        True
-      initState = mkPStatePure parserFlags buf loc
-   in go initState
-  where
-    go st = case unP (lexer False return) st of
-      POk _st' (unLoc -> ITeof) -> []
-      POk st' tok -> tok : go st'
-      PFailed st' -> error $ "Lexer error at " ++ show (GHC.loc st')
