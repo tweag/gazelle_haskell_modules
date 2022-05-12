@@ -1,9 +1,12 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 module HImportScan.ImportScannerSpec where
 
 import Data.Char (isSpace)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.String.QQ (s)
 import Test.Hspec
 import HImportScan.ImportScanner (ModuleImport(..), ScannedImports(..), scanImports)
@@ -25,7 +28,7 @@ showScannedImports si = Text.unlines $ map ("    " <>) $
     , filePath si
     , moduleName si
     ] ++
-    map (("  " <>) . showImport) (importedModules si) ++
+    map (("  " <>) . showImport) (Set.toList $ importedModules si) ++
     [ "usesTH = " <> Text.pack (show $ usesTH si)
     ]
   where
@@ -47,10 +50,10 @@ stripIndentation t =
       let (spaces, rest) = Text.span isSpace line
        in if Text.length rest == 0 then maxBound else Text.length spaces
 
-testSource :: Text -> [ModuleImport] -> Bool -> Text -> IO ()
+testSource :: Text -> Set ModuleImport -> Bool -> Text -> IO ()
 testSource = testSourceWithFile "dummy.hs"
 
-testSourceWithFile :: FilePath -> Text -> [ModuleImport] -> Bool -> Text -> IO ()
+testSourceWithFile :: FilePath -> Text -> Set ModuleImport -> Bool -> Text -> IO ()
 testSourceWithFile file moduleName importedModules usesTH contents = do
     NicelyPrinted (scanImports file $ stripIndentation contents)
       `shouldBe` NicelyPrinted ScannedImports

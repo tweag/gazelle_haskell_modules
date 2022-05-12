@@ -19,8 +19,10 @@ module HImportScan.ImportScanner
 import qualified Data.Aeson as Aeson
 import Data.ByteString.Internal(ByteString(..))
 import Data.Char (isAlphaNum, isSpace, toLower)
-import Data.List (isSuffixOf, nub)
+import Data.List (isSuffixOf)
 import Data.Maybe (catMaybes)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -35,7 +37,7 @@ import Text.Parsec.Pos (newPos)
 data ScannedImports = ScannedImports
   { filePath :: Text  -- ^ Path of the Haskell module
   , moduleName :: Text  -- ^ The module name
-  , importedModules :: [ModuleImport] -- ^ The modules imported in this module
+  , importedModules :: Set ModuleImport -- ^ The modules imported in this module
   , usesTH :: Bool  -- ^ Whether the module needs TH or the interpreter
   }
   deriving Eq
@@ -43,7 +45,7 @@ data ScannedImports = ScannedImports
 -- | A module import holds a module name and an optional package name
 -- when using package imports.
 data ModuleImport = ModuleImport (Maybe Text) Text
-  deriving Eq
+  deriving (Eq, Ord)
 
 instance Aeson.ToJSON ScannedImports where
   toJSON (ScannedImports filePath moduleName importedModules usesTH) =
@@ -125,7 +127,7 @@ flipBirdTracks f =
 
 data ScannedData = ScannedData
     { moduleName :: Text
-    , importedModules :: [ModuleImport]
+    , importedModules :: Set ModuleImport
     , usesTH :: Bool
     }
 
@@ -143,7 +145,7 @@ scanTokenStream fp toks =
       imports <- many parseImport
       return ScannedData
         { moduleName = modName
-        , importedModules = nub imports
+        , importedModules = Set.fromList imports
         , usesTH = any (`elem` ["TemplateHaskell", "QuasiQuotes"]) langExts
         }
 
