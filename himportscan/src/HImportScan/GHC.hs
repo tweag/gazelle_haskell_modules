@@ -3,7 +3,7 @@ module HImportScan.GHC(module X) where
 
 import EnumSet as X (empty, fromList)
 import ErrUtils as X (printBagOfErrors)
-import FastString as X (FastString, mkFastString, unpackFS)
+import FastString as X (FastString, mkFastString, bytesFS)
 import HeaderInfo as X (getOptions, getImports)
 import Lexer as X
   ( ParseResult(..)

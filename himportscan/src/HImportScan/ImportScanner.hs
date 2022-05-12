@@ -24,6 +24,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
 import qualified Data.Text.IO as Text
 import HImportScan.GHC as GHC
 import qualified HImportScan.GHC.Utils as GHC.Utils
@@ -107,7 +108,7 @@ scanImports filePath contents = do
                   toModuleImport :: (Maybe GHC.FastString, GHC.Located GHC.ModuleName) -> ModuleImport
                   toModuleImport (mfs, locatedModuleName) =
                     ModuleImport
-                      (fmap (Text.pack . GHC.unpackFS) mfs)
+                      (fmap (Text.decodeUtf8 . GHC.bytesFS) mfs)
                       (GHC.Utils.moduleNameToText locatedModuleName)
                  in Set.fromList $ map toModuleImport $ sourceImports ++ normalImports
             , usesTH
