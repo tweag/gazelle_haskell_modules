@@ -90,7 +90,6 @@ scanImports filePath contents = do
       any (`elem` ["-XTemplateHaskell", "-XQuasiQuotes"]) $
         map GHC.unLoc $
           GHC.getOptions dynFlags sb filePath
-  -- TODO: should both of the files here be filePath?
   GHC.getImports dynFlags sb filePath filePath >>= \case
     -- It's important that we error in this case, as otherwise the parser has gone terribly wrong probably.
     -- It's also ok to print the error, as it is usually descriptive and well formatted.
