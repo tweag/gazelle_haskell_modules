@@ -110,7 +110,7 @@ scanImports filePath contents = do
                       (fmap (Text.pack . GHC.unpackFS) mfs)
                       (GHC.Utils.moduleNameToText locatedModuleName)
                  in Set.fromList $ map toModuleImport $ sourceImports ++ normalImports
-            , usesTH = usesTH
+            , usesTH
             }
   where
     preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
