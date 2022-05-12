@@ -51,7 +51,6 @@ stack_snapshot(
     packages = [
         "aeson",
         "hspec",
-        "parsec",
         "string-qq",
         "tasty",
         "tasty-discover",

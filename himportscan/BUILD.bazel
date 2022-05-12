@@ -40,7 +40,6 @@ haskell_library(
         ":ghc-boot",
         ":text",
         "@io_tweag_gazelle_haskell_modules_deps//:aeson",
-        "@io_tweag_gazelle_haskell_modules_deps//:parsec",
     ],
 )
 

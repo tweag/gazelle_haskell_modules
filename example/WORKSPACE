@@ -57,7 +57,6 @@ stack_snapshot(
         "aeson",
         "base",
         "inspection-testing",
-        "parsec",
         "tasty",
         "tasty-discover",
         "tasty-hunit",
