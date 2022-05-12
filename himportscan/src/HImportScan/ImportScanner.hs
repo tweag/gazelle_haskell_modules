@@ -67,13 +67,13 @@ scanImportsFromFile filePath = do
   fileExists <- doesFileExist filePath
   if not fileExists
   then pure Nothing
-  else scanImports filePath =<< Text.readFile filePath
+  else fmap Just . scanImports filePath =<< Text.readFile filePath
 
 -- TODO[GL]: This function is only in IO because
 -- * we use printBagOfErrors to report an error, but we can easily factor that out
 -- * getImports is in IO, which in turn is only in IO to throw an error
 --   Perhaps we could raise an issue at ghc to make a pure variant.
-scanImports :: FilePath -> Text -> IO (Maybe ScannedImports)
+scanImports :: FilePath -> Text -> IO ScannedImports
 scanImports filePath contents = do
   -- TODO[GL]: going through String just because StringBuffer doesn't have a Text interface is not the best
   -- we could potentially skip that with more effort (e.g. go through ByteString, which is very similar to a StringBuffer)
@@ -96,12 +96,11 @@ scanImports filePath contents = do
     -- It's also ok to print the error, as it is usually descriptive and well formatted.
     -- The way we error here is that we're passing unexpected output to the go library.
     -- This is far from ideal, however handling this better would require being able to communicate errors better to go.
-    -- TODO[GL]: propagate error instead
     Left err -> do
       GHC.printBagOfErrors dynFlags err
-      pure Nothing
+      error "ghc parsing failed"
     Right (sourceImports, normalImports, moduleName) -> do
-      pure $ Just ScannedImports
+      pure ScannedImports
             { filePath = Text.pack filePath
             , moduleName = GHC.Utils.moduleNameToText moduleName
             , importedModules =

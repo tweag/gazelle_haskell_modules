@@ -55,13 +55,13 @@ testSource = testSourceWithFile "dummy.hs"
 
 testSourceWithFile :: FilePath -> Text -> Set ModuleImport -> Bool -> Text -> IO ()
 testSourceWithFile file moduleName importedModules usesTH contents = do
-    fmap (fmap NicelyPrinted) (scanImports file $ stripIndentation contents)
-      `shouldReturn` Just (NicelyPrinted ScannedImports
+    fmap NicelyPrinted (scanImports file $ stripIndentation contents)
+      `shouldReturn` NicelyPrinted ScannedImports
         { filePath = Text.pack file
         , moduleName
         , importedModules
         , usesTH
-        })
+        }
 
 spec_scanImports :: Spec
 spec_scanImports = do
