@@ -65,9 +65,9 @@ instance Aeson.ToJSON ModuleImport where
 scanImportsFromFile :: FilePath -> IO (Maybe ScannedImports)
 scanImportsFromFile filePath = do
   fileExists <- doesFileExist filePath
-  if not fileExists
-  then pure Nothing
-  else fmap Just . scanImports filePath =<< Text.readFile filePath
+  if fileExists
+  then fmap Just . scanImports filePath =<< Text.readFile filePath
+  else pure Nothing
 
 -- TODO[GL]: This function is only in IO because
 -- * we use printBagOfErrors to report an error, but we can easily factor that out
