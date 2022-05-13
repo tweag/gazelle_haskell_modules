@@ -92,10 +92,8 @@ scanImports dynFlags filePath contents = do
         map GHC.unLoc $
           GHC.getOptions dynFlagsWithExtensions sb filePath
   GHC.getImports dynFlagsWithExtensions sb filePath filePath >>= \case
-    -- It's important that we error in this case, as otherwise the parser has gone terribly wrong probably.
-    -- It's also ok to print the error, as it is usually descriptive and well formatted.
-    -- The way we error here is that we're passing unexpected output to the go library.
-    -- This is far from ideal, however handling this better would require being able to communicate errors better to go.
+    -- It's important that we error in this case to signal to the user that
+    -- something needs fixing in the source file.
     Left err -> do
       GHC.printBagOfErrors dynFlagsWithExtensions err
       throwIO (GHC.mkSrcErr err)
