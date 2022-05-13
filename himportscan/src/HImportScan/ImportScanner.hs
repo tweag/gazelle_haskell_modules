@@ -63,26 +63,26 @@ instance Aeson.ToJSON ModuleImport where
 -- If a file is missing, we return 'Nothing'.
 -- TODO: It would be better to give more information on the missing file,
 -- to report to the user.
-scanImportsFromFile :: FilePath -> IO (Maybe ScannedImports)
-scanImportsFromFile filePath = do
+scanImportsFromFile :: GHC.DynFlags -> FilePath -> IO (Maybe ScannedImports)
+scanImportsFromFile dynFlags filePath = do
   fileExists <- doesFileExist filePath
   if fileExists
-  then fmap Just . scanImports filePath =<< Text.readFile filePath
+  then fmap Just . scanImports dynFlags filePath =<< Text.readFile filePath
   else pure Nothing
 
 -- TODO[GL]: This function is only in IO because
 -- * we use printBagOfErrors to report an error, but we can easily factor that out
 -- * getImports is in IO, which in turn is only in IO to throw an error
 --   Perhaps we could raise an issue at ghc to make a pure variant.
-scanImports :: FilePath -> Text -> IO ScannedImports
-scanImports filePath contents = do
+scanImports :: GHC.DynFlags -> FilePath -> Text -> IO ScannedImports
+scanImports dynFlags filePath contents = do
   -- TODO[GL]: going through String just because StringBuffer doesn't have a Text interface is not the best
   -- we could potentially skip that with more effort (e.g. go through ByteString, which is very similar to a StringBuffer)
   let sb = GHC.stringToStringBuffer $ Text.unpack $ preprocessContents contents
 
   -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
   -- ParserOpts, as getImports no longer depends on DynFlags then.
-  let dynFlags = GHC.Utils.dynFlags
+  let dynFlagsWithExtensions = GHC.Utils.toggleDynFlags dynFlags
 
   let
     -- [GL] The fact that the resulting strings here contain the "-X"s makes me a bit doubtful that this is the right approach,
@@ -90,14 +90,14 @@ scanImports filePath contents = do
     usesTH =
       any (`elem` ["-XTemplateHaskell", "-XQuasiQuotes"]) $
         map GHC.unLoc $
-          GHC.getOptions dynFlags sb filePath
-  GHC.getImports dynFlags sb filePath filePath >>= \case
+          GHC.getOptions dynFlagsWithExtensions sb filePath
+  GHC.getImports dynFlagsWithExtensions sb filePath filePath >>= \case
     -- It's important that we error in this case, as otherwise the parser has gone terribly wrong probably.
     -- It's also ok to print the error, as it is usually descriptive and well formatted.
     -- The way we error here is that we're passing unexpected output to the go library.
     -- This is far from ideal, however handling this better would require being able to communicate errors better to go.
     Left err -> do
-      GHC.printBagOfErrors dynFlags err
+      GHC.printBagOfErrors dynFlagsWithExtensions err
       error "ghc parsing failed"
     Right (sourceImports, normalImports, moduleName) -> do
       pure ScannedImports

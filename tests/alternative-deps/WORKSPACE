@@ -45,12 +45,14 @@ load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_de
 
 gazelle_haskell_modules_dependencies(
     aeson = "@stackage-b//:aeson",
+    ghc_paths = "@stackage-b//:ghc-paths",
 )
 
 stack_snapshot(
     name = "stackage-b",
     packages = [
         "aeson",
+        "ghc-paths",
     ],
     snapshot = "lts-18.1",
 )

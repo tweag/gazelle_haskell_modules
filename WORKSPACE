@@ -50,6 +50,7 @@ stack_snapshot(
     },
     packages = [
         "aeson",
+        "ghc-paths",
         "hspec",
         "string-qq",
         "tasty",

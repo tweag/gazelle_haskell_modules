@@ -58,6 +58,7 @@ haskell_binary(
         ":himportscan-library",
         ":text",
         "@io_tweag_gazelle_haskell_modules_deps//:aeson",
+        "@io_tweag_gazelle_haskell_modules_deps//:ghc-paths",
     ],
 )
 
@@ -77,6 +78,7 @@ haskell_test(
         ":containers",
         ":himportscan-library",
         ":text",
+        "@stackage//:ghc-paths",
         "@stackage//:hspec",
         "@stackage//:string-qq",
         "@stackage//:tasty",
