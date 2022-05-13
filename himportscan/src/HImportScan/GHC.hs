@@ -16,7 +16,7 @@ import Lexer as X
   , mkParserFlags'
   , mkPStatePure, unP
   )
-import Module as X (ModuleName)
+import Module as X (ModuleName, moduleNameString)
 import SrcLoc as X
   ( Located
   , RealSrcLoc

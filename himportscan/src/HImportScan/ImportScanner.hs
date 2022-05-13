@@ -103,19 +103,21 @@ scanImports dynFlags filePath contents = do
     Right (sourceImports, normalImports, moduleName) -> do
       pure ScannedImports
             { filePath = Text.pack filePath
-            , moduleName = GHC.Utils.moduleNameToText moduleName
+            , moduleName = moduleNameToText moduleName
             , importedModules =
                 let
                   toModuleImport :: (Maybe GHC.FastString, GHC.Located GHC.ModuleName) -> ModuleImport
                   toModuleImport (mfs, locatedModuleName) =
                     ModuleImport
                       (fmap (Text.decodeUtf8 . GHC.bytesFS) mfs)
-                      (GHC.Utils.moduleNameToText locatedModuleName)
+                      (moduleNameToText locatedModuleName)
                  in Set.fromList $ map toModuleImport $ sourceImports ++ normalImports
             , usesTH
             }
   where
     preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
+
+    moduleNameToText = Text.pack . GHC.moduleNameString . GHC.unLoc
 
 -- | Clear CPP directives since they would otherwise confuse the scanner.
 --
