@@ -29,7 +29,6 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.IO as Text
 import HImportScan.GHC as GHC
-import qualified HImportScan.GHC.Utils as GHC.Utils
 import System.Directory (doesFileExist)
 
 -- | Holds the names of modules imported in a Haskell module.
@@ -83,7 +82,7 @@ scanImports dynFlags filePath contents = do
 
   -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
   -- ParserOpts, as getImports no longer depends on DynFlags then.
-  let dynFlagsWithExtensions = GHC.Utils.toggleDynFlags dynFlags
+  let dynFlagsWithExtensions = toggleDynFlags dynFlags
 
   let
     -- [GL] The fact that the resulting strings here contain the "-X"s makes me a bit doubtful that this is the right approach,
@@ -118,6 +117,18 @@ scanImports dynFlags filePath contents = do
     preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
 
     moduleNameToText = Text.pack . GHC.moduleNameString . GHC.unLoc
+
+-- Toggle extensions to the state we want them in.
+-- We should handle all forms of imports.
+-- We turn off ImplicitPrelude, because otherwise it shows up in imports lists which ghc returns.
+toggleDynFlags :: GHC.DynFlags -> GHC.DynFlags
+toggleDynFlags dflags0 =
+  let dflags1 = foldl GHC.xopt_set dflags0
+                  [ GHC.ImportQualifiedPost
+                  , GHC.PackageImports
+                  , GHC.TemplateHaskell
+                  ]
+   in GHC.xopt_unset dflags1 GHC.ImplicitPrelude
 
 -- | Clear CPP directives since they would otherwise confuse the scanner.
 --
