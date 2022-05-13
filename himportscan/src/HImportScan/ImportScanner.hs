@@ -16,6 +16,7 @@ module HImportScan.ImportScanner
   , scanImportsFromFile
   ) where
 
+import Data.ByteString.Internal(ByteString(PS))
 import Control.Exception (throwIO)
 import qualified Data.Aeson as Aeson
 import Data.Char (toLower)
@@ -77,9 +78,8 @@ scanImportsFromFile dynFlags filePath = do
 --   Perhaps we could raise an issue at ghc to make a pure variant.
 scanImports :: GHC.DynFlags -> FilePath -> Text -> IO ScannedImports
 scanImports dynFlags filePath contents = do
-  -- TODO[GL]: going through String just because StringBuffer doesn't have a Text interface is not the best
-  -- we could potentially skip that with more effort (e.g. go through ByteString, which is very similar to a StringBuffer)
-  let sb = GHC.stringToStringBuffer $ Text.unpack $ preprocessContents contents
+  let sb = case Text.encodeUtf8 $ preprocessContents contents of
+        PS ptr offset len -> StringBuffer ptr len offset
 
   -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
   -- ParserOpts, as getImports no longer depends on DynFlags then.
