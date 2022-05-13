@@ -16,6 +16,7 @@ module HImportScan.ImportScanner
   , scanImportsFromFile
   ) where
 
+import Control.Exception (throwIO)
 import qualified Data.Aeson as Aeson
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
@@ -98,7 +99,7 @@ scanImports dynFlags filePath contents = do
     -- This is far from ideal, however handling this better would require being able to communicate errors better to go.
     Left err -> do
       GHC.printBagOfErrors dynFlagsWithExtensions err
-      error "ghc parsing failed"
+      throwIO (GHC.mkSrcErr err)
     Right (sourceImports, normalImports, moduleName) -> do
       pure ScannedImports
             { filePath = Text.pack filePath

@@ -7,6 +7,7 @@ import ErrUtils as X (printBagOfErrors)
 import FastString as X (FastString, mkFastString, bytesFS)
 import GHC as X (runGhc, getSessionDynFlags)
 import HeaderInfo as X (getOptions, getImports)
+import HscTypes as X (mkSrcErr)
 import Lexer as X
   ( ParseResult(..)
   , Token(..)
