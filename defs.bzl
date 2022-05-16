@@ -7,10 +7,8 @@ def _gazelle_haskell_modules_dependencies_impl(repository_ctx):
 package(default_visibility = ["//visibility:public"])
 
 alias(name="aeson", actual="{aeson}")
-alias(name="ghc-paths", actual="{ghc_paths}")
         '''.format(
             aeson = repository_ctx.attr.aeson,
-            ghc_paths = repository_ctx.attr.ghc_paths,
         ),
         executable = False,
     )
@@ -20,7 +18,6 @@ _gazelle_haskell_modules_dependencies = repository_rule(
     local = True,
     attrs = {
         "aeson": attr.label(default = "@stackage//:aeson"),
-        "ghc_paths": attr.label(default = "@stackage//:ghc-paths"),
     },
 )
 

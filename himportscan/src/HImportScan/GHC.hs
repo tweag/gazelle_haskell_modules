@@ -1,7 +1,7 @@
 -- | A module abstracting the provenance of GHC API names
 module HImportScan.GHC(module X) where
 
-import DynFlags as X (DynFlags, xopt_set, xopt_unset)
+import DynFlags as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import EnumSet as X (empty, fromList)
 import ErrUtils as X (printBagOfErrors)
 import FastString as X (FastString, mkFastString, bytesFS)

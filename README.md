@@ -76,7 +76,6 @@ stack_snapshot(
     name = "stackage",
     packages = [
         "aeson",
-        "ghc-paths",
     ],
     # Most snapshots of your choice might do
     snapshot = "lts-18.1",
@@ -84,9 +83,6 @@ stack_snapshot(
 ```
 Should Haskell packages need to be grabbed from elsewhere, alternative
 labels can be provided to [gazelle_haskell_modules_dependencies][gazelle_haskell_modules_dependencies].
-
-Note that for dependencies with `-` in their name, such as `ghc-paths`, since Starlark doesn't allow `-` in identifiers, you'll need to use
-an underscored version, e.g. `ghc_paths`.
 
 You can generate or update build rules by adding the following to
 one of your `BUILD` files.

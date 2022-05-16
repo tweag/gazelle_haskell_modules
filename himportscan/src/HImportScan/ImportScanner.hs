@@ -29,6 +29,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.IO as Text
 import HImportScan.GHC as GHC
+import qualified HImportScan.GHC.Settings as GHC.Settings
 import System.Directory (doesFileExist)
 
 -- | Holds the names of modules imported in a Haskell module.
@@ -64,25 +65,25 @@ instance Aeson.ToJSON ModuleImport where
 -- If a file is missing, we return 'Nothing'.
 -- TODO: It would be better to give more information on the missing file,
 -- to report to the user.
-scanImportsFromFile :: GHC.DynFlags -> FilePath -> IO (Maybe ScannedImports)
-scanImportsFromFile dynFlags filePath = do
+scanImportsFromFile :: FilePath -> IO (Maybe ScannedImports)
+scanImportsFromFile filePath = do
   fileExists <- doesFileExist filePath
   if fileExists
-  then fmap Just . scanImports dynFlags filePath =<< Text.readFile filePath
+  then fmap Just . scanImports filePath =<< Text.readFile filePath
   else pure Nothing
 
 -- TODO[GL]: This function is only in IO because
 -- * we use printBagOfErrors to report an error, but we can easily factor that out
 -- * getImports is in IO, which in turn is only in IO to throw an error
 --   Perhaps we could raise an issue at ghc to make a pure variant.
-scanImports :: GHC.DynFlags -> FilePath -> Text -> IO ScannedImports
-scanImports dynFlags filePath contents = do
+scanImports :: FilePath -> Text -> IO ScannedImports
+scanImports filePath contents = do
   let sb = case Text.encodeUtf8 $ preprocessContents contents of
         PS ptr offset len -> StringBuffer ptr len offset
 
   -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
   -- ParserOpts, as getImports no longer depends on DynFlags then.
-  let dynFlagsWithExtensions = toggleDynFlags dynFlags
+  let dynFlagsWithExtensions = toggleDynFlags $ GHC.defaultDynFlags GHC.Settings.fakeSettings GHC.Settings.fakeLlvmConfig
 
   let
     -- [GL] The fact that the resulting strings here contain the "-X"s makes me a bit doubtful that this is the right approach,

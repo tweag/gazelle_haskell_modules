@@ -10,8 +10,6 @@ import qualified Data.Set as Set
 import Data.String.QQ (s)
 import Data.Text (Text)
 import qualified Data.Text as Text
-import qualified GHC.Paths
-import qualified HImportScan.GHC as GHC
 import HImportScan.ImportScanner (ModuleImport(..), ScannedImports(..), scanImports)
 import Test.Hspec
 
@@ -52,12 +50,12 @@ stripIndentation t =
       let (spaces, rest) = Text.span isSpace line
        in if Text.length rest == 0 then maxBound else Text.length spaces
 
-testSource :: GHC.DynFlags -> Text -> Set ModuleImport -> Bool -> Text -> IO ()
+testSource :: Text -> Set ModuleImport -> Bool -> Text -> IO ()
 testSource = testSourceWithFile "dummy.hs"
 
-testSourceWithFile :: FilePath -> GHC.DynFlags -> Text -> Set ModuleImport -> Bool -> Text -> IO ()
-testSourceWithFile file dynFlags moduleName importedModules usesTH contents = do
-    fmap NicelyPrinted (scanImports dynFlags file $ stripIndentation contents)
+testSourceWithFile :: FilePath -> Text -> Set ModuleImport -> Bool -> Text -> IO ()
+testSourceWithFile file moduleName importedModules usesTH contents = do
+    fmap NicelyPrinted (scanImports file $ stripIndentation contents)
       `shouldReturn` NicelyPrinted ScannedImports
         { filePath = Text.pack file
         , moduleName
@@ -66,35 +64,34 @@ testSourceWithFile file dynFlags moduleName importedModules usesTH contents = do
         }
 
 spec_scanImports :: Spec
-spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionDynFlags) $ do
+spec_scanImports = do
     let m = ModuleImport Nothing
-    it "should accept empty files" $ \dynFlags ->
-      testSource dynFlags "Main" [] False ""
-    it "should find an import" $ \dynFlags ->
-      testSource dynFlags "Main" [m "A.B.C"] False "import A.B.C"
-    it "should find multiple imports" $ \dynFlags ->
-      testSource dynFlags "Main" [m "A.B.C", m "A.B.D"] False [s|
+    it "should accept empty files" $
+      testSource "Main" [] False ""
+    it "should find an import" $
+      testSource "Main" [m "A.B.C"] False "import A.B.C"
+    it "should find multiple imports" $
+      testSource "Main" [m "A.B.C", m "A.B.D"] False [s|
          import A.B.C
          import A.B.D
       |]
-    it "should accept module headers" $ \dynFlags ->
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D"] False [s|
+    it "should accept module headers" $
+      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
          module M where
 
          import A.B.C
          import A.B.D
       |]
-    it "should accept post fix qualified imports" $ \dynFlags ->
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D", m "A.B.E"] False [s|
+    it "should accept post fix qualified imports" $
+      testSource "M" [m "A.B.C", m "A.B.D", m "A.B.E"] False [s|
          module M where
 
          import A.B.C
          import A.B.D qualified
          import A.B.E
         |]
-    it "should accept package imports" $ \dynFlags ->
+    it "should accept package imports" $
       testSource
-        dynFlags
         "M"
         [ ModuleImport (Just "package-a") "A.B.C"
         , ModuleImport (Just "package-b") "A.B.D"
@@ -106,8 +103,8 @@ spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionD
            import "package-a" A.B.C
            import qualified "package-b" A.B.D
          |]
-    it "should accept declarations after imports" $ \dynFlags ->
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D"] False [s|
+    it "should accept declarations after imports" $
+      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
          module M where
 
          import A.B.C
@@ -115,8 +112,8 @@ spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionD
 
          f = 1
       |]
-    it "should skip CPP directives" $ \dynFlags -> do
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D"] False [s|
+    it "should skip CPP directives" $ do
+      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
          module M where
 
          #define a_multiline macro \
@@ -126,8 +123,8 @@ spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionD
 
          f = 1
       |]
-    it "should skip comments" $ \dynFlags -> do
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D"] False [s|
+    it "should skip comments" $ do
+      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
          -- | Some module
          module M where
 
@@ -137,8 +134,8 @@ spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionD
 
          f = 1
        |]
-    it "should recognize TemplateHaskell in language pragmas" $ \dynFlags -> do
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D"] True [s|
+    it "should recognize TemplateHaskell in language pragmas" $ do
+      testSource "M" [m "A.B.C", m "A.B.D"] True [s|
          {-# LANGUAGE CPP #-}
          {-# LANGUAGE TemplateHaskell #-}
          module M where
@@ -148,8 +145,8 @@ spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionD
 
          f = 1
        |]
-    it "should recognize TemplateHaskell in language pragmas with multiple extensions" $ \dynFlags -> do
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D"] True [s|
+    it "should recognize TemplateHaskell in language pragmas with multiple extensions" $ do
+      testSource "M" [m "A.B.C", m "A.B.D"] True [s|
          {-# LANGUAGE CPP #-}
          {-# LANGUAGE OverloadedStrings, TemplateHaskell, TypeApplications #-}
          module M where
@@ -159,8 +156,8 @@ spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionD
 
          f = 1
        |]
-    it "should recognize TemplateHaskell when QuasiQuotes is used" $ \dynFlags -> do
-      testSource dynFlags "M" [m "A.B.C", m "A.B.D"] True [s|
+    it "should recognize TemplateHaskell when QuasiQuotes is used" $ do
+      testSource "M" [m "A.B.C", m "A.B.D"] True [s|
          {-# LANGUAGE CPP #-}
          {-# LANGUAGE QuasiQuotes #-}
          module M where
@@ -170,8 +167,8 @@ spec_scanImports = beforeAll (GHC.runGhc (Just GHC.Paths.libdir) GHC.getSessionD
 
          f = 1
        |]
-    it "should accept literate Haskell" $ \dynFlags -> do
-      testSourceWithFile "dummy.lhs" dynFlags "M" [m "A.B.C", m "A.B.D"] False [s|
+    it "should accept literate Haskell" $ do
+      testSourceWithFile "dummy.lhs" "M" [m "A.B.C", m "A.B.D"] False [s|
          > module M where
          >
          > import A.B.C
