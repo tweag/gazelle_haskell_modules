@@ -1,6 +1,7 @@
 package gazelle_haskell_modules
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -151,15 +152,37 @@ func haskellModulesToModuleData(moduleFiles []string) []*ModuleData {
 	cmd := exec.Command(himportscan)
 
 	cmd.Stdin = strings.NewReader(strings.Join(moduleFiles, "\n"))
-	out, err := cmd.CombinedOutput()
+
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+
+	err = cmd.Start()
 	if err != nil {
-		log.Printf("%s", out)
-		log.Fatal(err)
+		log.Fatalf("himportscan failed to start %v", err)
 	}
-	var modDatas []*ModuleData
-	err = json.Unmarshal(out, &modDatas)
+
+	err = cmd.Wait()
+	stdoutBytes := stdout.Bytes()
+	stderrString := stderr.String()
+
 	if err != nil {
-		log.Printf("Incorrect json: %s\n", out)
+		fmt.Printf("%s\n", stdout.Bytes())
+		fmt.Printf("%s\n", stderrString)
+		log.Fatalf("himportscan exited unsuccessfully %v\n", err)
+	}
+
+	// print stderr so if himportscan generates some stderr but doesn't fail the user might see useful output
+	if stderrString != "" {
+		log.Printf("%s\n", stderrString)
+	}
+
+	var modDatas []*ModuleData
+	err = json.Unmarshal(stdoutBytes, &modDatas)
+	if err != nil {
+		log.Printf("Incorrect json: %s\n", stdoutBytes)
 		log.Fatal(err)
 	}
 	return modDatas
