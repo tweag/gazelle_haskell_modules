@@ -12,6 +12,8 @@ import GHC.LanguageExtensions as X
     , PackageImports
     , TemplateHaskell
     , ImplicitPrelude
+    , PatternSynonyms
+    , ExplicitNamespaces
     )
   )
 import HeaderInfo as X (getOptions, getImports)

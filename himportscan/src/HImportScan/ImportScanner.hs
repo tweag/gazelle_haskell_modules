@@ -126,6 +126,8 @@ toggleDynFlags dflags0 =
                   [ GHC.ImportQualifiedPost
                   , GHC.PackageImports
                   , GHC.TemplateHaskell
+                  , GHC.PatternSynonyms
+                  , GHC.ExplicitNamespaces
                   ]
    in GHC.xopt_unset dflags1 GHC.ImplicitPrelude
 
