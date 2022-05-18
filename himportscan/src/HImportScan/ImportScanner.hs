@@ -128,6 +128,7 @@ toggleDynFlags dflags0 =
                   , GHC.TemplateHaskell
                   , GHC.PatternSynonyms
                   , GHC.ExplicitNamespaces
+                  , GHC.MagicHash
                   ]
    in GHC.xopt_unset dflags1 GHC.ImplicitPrelude
 

@@ -14,6 +14,7 @@ import GHC.LanguageExtensions as X
     , ImplicitPrelude
     , PatternSynonyms
     , ExplicitNamespaces
+    , MagicHash
     )
   )
 import HeaderInfo as X (getOptions, getImports)
