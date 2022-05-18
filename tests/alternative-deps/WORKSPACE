@@ -45,14 +45,12 @@ load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_de
 
 gazelle_haskell_modules_dependencies(
     aeson = "@stackage-b//:aeson",
-    parsec = "@stackage-b//:parsec",
 )
 
 stack_snapshot(
     name = "stackage-b",
     packages = [
         "aeson",
-        "parsec",
     ],
     snapshot = "lts-18.1",
 )

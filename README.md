@@ -76,7 +76,6 @@ stack_snapshot(
     name = "stackage",
     packages = [
         "aeson",
-        "parsec",
     ],
     # Most snapshots of your choice might do
     snapshot = "lts-18.1",

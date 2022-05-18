@@ -1,8 +1,24 @@
 -- | A module abstracting the provenance of GHC API names
 module HImportScan.GHC(module X) where
 
+import DynFlags as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import EnumSet as X (empty, fromList)
-import FastString as X (mkFastString, unpackFS)
+import ErrUtils as X (printBagOfErrors)
+import FastString as X (FastString, mkFastString, bytesFS)
+import GHC as X (runGhc, getSessionDynFlags)
+import GHC.LanguageExtensions as X
+  (Extension
+    ( ImportQualifiedPost
+    , PackageImports
+    , TemplateHaskell
+    , ImplicitPrelude
+    , PatternSynonyms
+    , ExplicitNamespaces
+    , MagicHash
+    )
+  )
+import HeaderInfo as X (getOptions, getImports)
+import HscTypes as X (mkSrcErr)
 import Lexer as X
   ( ParseResult(..)
   , Token(..)
@@ -11,6 +27,7 @@ import Lexer as X
   , mkParserFlags'
   , mkPStatePure, unP
   )
+import Module as X (ModuleName, moduleNameString)
 import SrcLoc as X
   ( Located
   , RealSrcLoc
@@ -22,4 +39,4 @@ import SrcLoc as X
   , srcSpanStart
   , unLoc
   )
-import StringBuffer as X (StringBuffer(StringBuffer))
+import StringBuffer as X (StringBuffer(StringBuffer), stringToStringBuffer)

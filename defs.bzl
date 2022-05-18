@@ -7,10 +7,8 @@ def _gazelle_haskell_modules_dependencies_impl(repository_ctx):
 package(default_visibility = ["//visibility:public"])
 
 alias(name="aeson", actual="{aeson}")
-alias(name="parsec", actual="{parsec}")
         '''.format(
             aeson = repository_ctx.attr.aeson,
-            parsec = repository_ctx.attr.parsec,
         ),
         executable = False,
     )
@@ -20,7 +18,6 @@ _gazelle_haskell_modules_dependencies = repository_rule(
     local = True,
     attrs = {
         "aeson": attr.label(default = "@stackage//:aeson"),
-        "parsec": attr.label(default = "@stackage//:parsec"),
     },
 )
 
@@ -41,7 +38,6 @@ def gazelle_haskell_modules_dependencies(**kargs):
       # Dependencies overriden
       gazelle_haskell_modules_dependencies(
           aeson = "@someother//:some-other-aeson",
-          parsec = "@someother//:parsec",
       )
 
       ```

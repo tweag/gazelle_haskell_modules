@@ -12,9 +12,15 @@ haskell_toolchain_library(name = "base")
 
 haskell_toolchain_library(name = "bytestring")
 
+haskell_toolchain_library(name = "containers")
+
 haskell_toolchain_library(name = "directory")
 
 haskell_toolchain_library(name = "ghc")
+
+# Needed for GHC.LanguageExtensions.
+# You can probably revisit this when changing ghc versions.
+haskell_toolchain_library(name = "ghc-boot")
 
 haskell_toolchain_library(name = "text")
 
@@ -28,11 +34,12 @@ haskell_library(
     deps = [
         ":base",
         ":bytestring",
+        ":containers",
         ":directory",
         ":ghc",
+        ":ghc-boot",
         ":text",
         "@io_tweag_gazelle_haskell_modules_deps//:aeson",
-        "@io_tweag_gazelle_haskell_modules_deps//:parsec",
     ],
 )
 
@@ -46,6 +53,7 @@ haskell_binary(
     deps = [
         ":base",
         ":bytestring",
+        ":containers",
         ":ghc",
         ":himportscan-library",
         ":text",
@@ -66,6 +74,7 @@ haskell_test(
     ],
     deps = [
         ":base",
+        ":containers",
         ":himportscan-library",
         ":text",
         "@stackage//:hspec",

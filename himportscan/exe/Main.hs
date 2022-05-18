@@ -2,10 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import HImportScan.ImportScanner (ScannedImports, scanImportsFromFile)
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy
 import Data.Maybe (catMaybes)
+import HImportScan.ImportScanner (ScannedImports, scanImportsFromFile)
 
 main :: IO ()
 main = do
