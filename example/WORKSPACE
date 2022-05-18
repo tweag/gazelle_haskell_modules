@@ -56,7 +56,6 @@ stack_snapshot(
     packages = [
         "aeson",
         "base",
-        "ghc-paths",
         "inspection-testing",
         "tasty",
         "tasty-discover",
