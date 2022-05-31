@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE DisambiguateRecordFields #-}
 module HImportScan.ImportScannerSpec where
 
 import Data.Char (isSpace)
@@ -23,17 +24,22 @@ instance Show NicelyPrinted where
   show (NicelyPrinted si) = Text.unpack $ showScannedImports si
 
 showScannedImports :: ScannedImports -> Text
-showScannedImports si = Text.unlines $ map ("    " <>) $
+showScannedImports ScannedImports{filePath, moduleName, importedModules, usesTH} = Text.unlines $ map ("    " <>) $
     [ ""
-    , filePath si
-    , moduleName si
+    , filePath
+    , moduleName
     ] ++
-    map (("  " <>) . showImport) (Set.toList $ importedModules si) ++
-    [ "usesTH = " <> Text.pack (show $ usesTH si)
+    map (("  " <>) . showImport) (Set.toList importedModules) ++
+    [ "usesTH = " <> Text.pack (show usesTH)
     ]
   where
-    showImport (ModuleImport (Just pkg) x) = Text.pack (show pkg) <> " " <> x
-    showImport (ModuleImport Nothing x) = x
+    showImport (ModuleImport mpkg x sourceImport) =
+      mconcat
+        [ maybe "" (\pkg -> Text.pack (show pkg) <> " ") mpkg
+        , x
+        , " "
+        , Text.pack (show sourceImport)
+        ]
 
 -- |
 --
@@ -63,9 +69,10 @@ testSourceWithFile file moduleName importedModules usesTH contents = do
         , usesTH
         }
 
+-- TODO: add test for source imports
 spec_scanImports :: Spec
 spec_scanImports = do
-    let m = ModuleImport Nothing
+    let m x = ModuleImport Nothing x False
     it "should accept empty files" $
       testSource "Main" [] False ""
     it "should find an import" $
@@ -93,8 +100,8 @@ spec_scanImports = do
     it "should accept package imports" $
       testSource
         "M"
-        [ ModuleImport (Just "package-a") "A.B.C"
-        , ModuleImport (Just "package-b") "A.B.D"
+        [ ModuleImport (Just "package-a") "A.B.C" False
+        , ModuleImport (Just "package-b") "A.B.D" False
         ]
         False
         [s|

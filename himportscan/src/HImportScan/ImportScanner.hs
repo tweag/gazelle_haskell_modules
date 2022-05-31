@@ -46,6 +46,7 @@ data ScannedImports = ScannedImports
 data ModuleImport = ModuleImport
   { packageName :: Maybe Text
   , moduleName :: Text
+  , sourceImport :: Bool
   }
   deriving (Eq, Ord)
 
@@ -59,10 +60,11 @@ instance Aeson.ToJSON ScannedImports where
       ]
 
 instance Aeson.ToJSON ModuleImport where
-  toJSON (ModuleImport maybePackageName moduleName) =
+  toJSON (ModuleImport maybePackageName moduleName sourceImport) =
     Aeson.object
       [ ("packageName", Aeson.String $ fromMaybe "" maybePackageName)
       , ("moduleName", Aeson.String moduleName)
+      , ("sourceImport", Aeson.Bool sourceImport)
       ]
 
 -- | Retrieves the names of modules imported in the given
@@ -110,12 +112,15 @@ scanImports filePath contents = do
             , moduleName = moduleNameToText moduleName
             , importedModules =
                 let
-                  toModuleImport :: (Maybe GHC.FastString, GHC.Located GHC.ModuleName) -> ModuleImport
-                  toModuleImport (mfs, locatedModuleName) =
+                  toModuleImport :: Bool -> (Maybe GHC.FastString, GHC.Located GHC.ModuleName) -> ModuleImport
+                  toModuleImport sourceImport (mfs, locatedModuleName) =
                     ModuleImport
                       (fmap (Text.decodeUtf8 . GHC.bytesFS) mfs)
                       (moduleNameToText locatedModuleName)
-                 in Set.fromList $ map toModuleImport $ sourceImports ++ normalImports
+                      sourceImport
+                  sourceImportToModuleImport = toModuleImport True
+                  nonSourceImportToModuleImport = toModuleImport False
+                 in Set.fromList $ map sourceImportToModuleImport sourceImports ++ map nonSourceImportToModuleImport normalImports
             , usesTH
             }
   where
