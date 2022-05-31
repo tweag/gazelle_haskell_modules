@@ -43,7 +43,10 @@ data ScannedImports = ScannedImports
 
 -- | A module import holds a module name and an optional package name
 -- when using package imports.
-data ModuleImport = ModuleImport (Maybe Text) Text
+data ModuleImport = ModuleImport
+  { packageName :: Maybe Text
+  , moduleName :: Text
+  }
   deriving (Eq, Ord)
 
 instance Aeson.ToJSON ScannedImports where
