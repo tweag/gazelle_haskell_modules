@@ -21,7 +21,7 @@ import Control.Exception (throwIO)
 import qualified Data.Aeson as Aeson
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
-import Data.Maybe (catMaybes)
+import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -60,7 +60,10 @@ instance Aeson.ToJSON ScannedImports where
 
 instance Aeson.ToJSON ModuleImport where
   toJSON (ModuleImport maybePackageName moduleName) =
-    Aeson.toJSON $ catMaybes [maybePackageName, Just moduleName]
+    Aeson.object
+      [ ("packageName", Aeson.String $ fromMaybe "" maybePackageName)
+      , ("moduleName", Aeson.String moduleName)
+      ]
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve

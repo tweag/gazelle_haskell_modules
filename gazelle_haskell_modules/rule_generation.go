@@ -398,20 +398,6 @@ type ModuleImport struct {
 	ModuleName  string
 }
 
-func (moduleImport *ModuleImport) UnmarshalJSON(data []byte) error {
-	var aux []string
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	pkgName := ""
-	if len(aux) > 1 {
-		pkgName = aux[0]
-	}
-	moduleImport.PackageName = pkgName
-	moduleImport.ModuleName = aux[len(aux)-1]
-	return nil
-}
-
 type RuleInfo struct {
 	OriginatingRules []*rule.Rule
 	ModuleData       *ModuleData
