@@ -398,17 +398,27 @@ type ModuleImport struct {
 	ModuleName  string
 }
 
+type TempModuleImport struct {
+	IsSourceImported bool
+	ModuleName       []string
+}
+
 func (moduleImport *ModuleImport) UnmarshalJSON(data []byte) error {
-	var aux []string
-	if err := json.Unmarshal(data, &aux); err != nil {
+	var tempMod TempModuleImport
+	if err := json.Unmarshal(data, &tempMod); err != nil {
 		return err
 	}
+	aux := tempMod.ModuleName
 	pkgName := ""
 	if len(aux) > 1 {
 		pkgName = aux[0]
 	}
+	suffix := ""
+	if tempMod.IsSourceImported {
+		suffix = "-boot"
+	}
 	moduleImport.PackageName = pkgName
-	moduleImport.ModuleName = aux[len(aux)-1]
+	moduleImport.ModuleName = aux[len(aux)-1] + suffix
 	return nil
 }
 
@@ -534,7 +544,11 @@ func srcStripPrefix(file, modName string) string {
 }
 
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
-	return ruleInfo.OriginatingRules[0].Name() + "." + ruleInfo.ModuleData.ModuleName
+	suffix := ""
+	if strings.HasSuffix(ruleInfo.ModuleData.FilePath, "-boot") {
+		suffix = "-boot"
+	}
+	return ruleInfo.OriginatingRules[0].Name() + "." + ruleInfo.ModuleData.ModuleName + suffix
 }
 
 // Check for the "usual" keep directive, along with our own custom "# gazelle_haskell_modules:keep".

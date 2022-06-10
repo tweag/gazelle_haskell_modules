@@ -43,7 +43,11 @@ data ScannedImports = ScannedImports
 
 -- | A module import holds a module name and an optional package name
 -- when using package imports.
-data ModuleImport = ModuleImport (Maybe Text) Text
+-- It also stores if the import was a normal or a source import.
+data ModuleImport = ModuleImport ImportMethod (Maybe Text) Text
+  deriving (Eq, Ord)
+
+data ImportMethod = SourceImport | NormalImport
   deriving (Eq, Ord)
 
 instance Aeson.ToJSON ScannedImports where
@@ -55,9 +59,15 @@ instance Aeson.ToJSON ScannedImports where
       , ("usesTH", Aeson.toJSON usesTH)
       ]
 
+-- Since it is easier to store in JSON format,
+-- the type `ImportMethod`, isomorphic to `Bool`
+-- is casted during the translation to JSON.
 instance Aeson.ToJSON ModuleImport where
-  toJSON (ModuleImport maybePackageName moduleName) =
-    Aeson.toJSON $ catMaybes [maybePackageName, Just moduleName]
+  toJSON (ModuleImport importMethod maybePackageName moduleName) =
+    Aeson.object
+      [ ("isSourceImported", Aeson.Bool (importMethod == SourceImport))
+      , ("moduleName", Aeson.toJSON $ catMaybes [maybePackageName, Just moduleName])
+      ]
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
@@ -104,12 +114,13 @@ scanImports filePath contents = do
             , moduleName = moduleNameToText moduleName
             , importedModules =
                 let
-                  toModuleImport :: (Maybe GHC.FastString, GHC.Located GHC.ModuleName) -> ModuleImport
-                  toModuleImport (mfs, locatedModuleName) =
+                  toModuleImport :: (ImportMethod, (Maybe GHC.FastString, GHC.Located GHC.ModuleName)) -> ModuleImport
+                  toModuleImport (importMethod, (mfs, locatedModuleName)) =
                     ModuleImport
+                      importMethod
                       (fmap (Text.decodeUtf8 . GHC.bytesFS) mfs)
                       (moduleNameToText locatedModuleName)
-                 in Set.fromList $ map toModuleImport $ sourceImports ++ normalImports
+                 in Set.fromList $ map toModuleImport $ map (SourceImport,) sourceImports ++ map (NormalImport,) normalImports
             , usesTH
             }
   where

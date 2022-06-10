@@ -3,6 +3,7 @@ package gazelle_haskell_modules
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bazelbuild/bazel-gazelle/label"
 	"github.com/bazelbuild/bazel-gazelle/resolve"
@@ -135,27 +136,37 @@ func findModuleLabelByModuleName(
 	libs []label.Label,
 ) (*label.Label, error) {
 	spec := moduleByModuleImportSpec(moduleImport)
+	isBootDep := false
+	if strings.HasSuffix(spec.Imp, "-boot") {
+		isBootDep = true
+		spec.Imp = strings.TrimSuffix(spec.Imp, "-boot")
+	}
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
 	for _, r := range res {
-		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
-		if len(intersection) > 0 {
-			if foundLabel.Name != "" {
-				return nil, fmt.Errorf(
-					"Multiple rules define %q:%s in %v: %v and %v",
-					moduleImport.PackageName,
-					moduleImport.ModuleName,
-					intersection,
-					foundLabel,
-					r.Label,
-				)
-			} else {
-				foundLabel = r.Label
+		if !strings.HasSuffix(r.Label.Name, "-boot") {
+			intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
+			if len(intersection) > 0 {
+				if foundLabel.Name != "" {
+					return nil, fmt.Errorf(
+						"Multiple rules define %q:%s in %v: %v and %v",
+						moduleImport.PackageName,
+						moduleImport.ModuleName,
+						intersection,
+						foundLabel,
+						r.Label,
+					)
+				} else {
+					foundLabel = r.Label
+				}
 			}
 		}
 	}
 	if foundLabel.Name != "" {
+		if isBootDep {
+			foundLabel.Name = foundLabel.Name + "-boot"
+		}
 		return &foundLabel, nil
 	} else {
 		return nil, nil

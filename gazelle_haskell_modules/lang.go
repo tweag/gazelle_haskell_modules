@@ -259,7 +259,7 @@ func cleanupHiddenModulesList(r *rule.Rule, deleted map[string]bool) {
 		// TODO: use something better?
 		shouldKeepModule := func(module string) bool {
 			moduleRuleName := fmt.Sprintf("%s.%s", ruleName, module)
-			return !modulesSet[":" + moduleRuleName] || !deleted[moduleRuleName]
+			return !modulesSet[":"+moduleRuleName] || !deleted[moduleRuleName]
 		}
 		cleanupModulesLists(r, "hidden_modules", shouldKeepModule)
 	}
