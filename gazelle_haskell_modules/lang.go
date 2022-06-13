@@ -119,14 +119,14 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			if originatingRule.Kind() == "haskell_library" {
 				moduleSpecs = append(
 					moduleSpecs,
-					moduleByModuleImportSpec(&ModuleImport{getPackageNameFromRule(originatingRule), getModuleNameFromRule(r)}),
+					moduleByModuleImportSpec(&ModuleImport{getIsBootFromRule(r), getPackageNameFromRule(originatingRule), getModuleNameFromRule(r)}),
 				)
 			}
 		}
 		if len(originatingRules) > 0 {
 			moduleSpecs = append(
 				moduleSpecs,
-				moduleByModuleImportSpec(&ModuleImport{"", getModuleNameFromRule(r)}))
+				moduleByModuleImportSpec(&ModuleImport{getIsBootFromRule(r), "", getModuleNameFromRule(r)}))
 		}
 		return moduleSpecs
 	} else if isNonHaskellModule(r.Kind()) {
@@ -259,7 +259,7 @@ func cleanupHiddenModulesList(r *rule.Rule, deleted map[string]bool) {
 		// TODO: use something better?
 		shouldKeepModule := func(module string) bool {
 			moduleRuleName := fmt.Sprintf("%s.%s", ruleName, module)
-			return !modulesSet[":" + moduleRuleName] || !deleted[moduleRuleName]
+			return !modulesSet[":"+moduleRuleName] || !deleted[moduleRuleName]
 		}
 		cleanupModulesLists(r, "hidden_modules", shouldKeepModule)
 	}
@@ -290,6 +290,13 @@ func cleanupModulesLists(r *rule.Rule, modulesFieldName string, shouldKeepModule
 ////////////////////////////////
 // Indexing
 ////////////////////////////////
+
+func getIsBootFromRule(r *rule.Rule) bool {
+	if r.PrivateAttr(PRIVATE_ATTR_IS_BOOT) == nil {
+		log.Fatal("Error reading boot status of " + r.Name())
+	}
+	return r.PrivateAttr(PRIVATE_ATTR_IS_BOOT).(bool)
+}
 
 func getModuleNameFromRule(r *rule.Rule) string {
 	if r.PrivateAttr(PRIVATE_ATTR_MODULE_NAME) == nil {

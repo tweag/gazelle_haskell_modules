@@ -289,16 +289,16 @@ func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
 }
 
 func moduleByModuleImportSpec(moduleImport *ModuleImport) resolve.ImportSpec {
-	return resolve.ImportSpec{
-		gazelleHaskellModulesName,
-		fmt.Sprintf("module_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
-	}
-}
-
-func moduleByPackageImportSpec(pkgName string, moduleName string) resolve.ImportSpec {
-	return resolve.ImportSpec{
-		gazelleHaskellModulesName,
-		fmt.Sprintf("module_name:%s:%s", pkgName, moduleName),
+	if moduleImport.IsSourceImported {
+		return resolve.ImportSpec{
+			gazelleHaskellModulesName,
+			fmt.Sprintf("module_source_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
+		}
+	} else {
+		return resolve.ImportSpec{
+			gazelleHaskellModulesName,
+			fmt.Sprintf("module_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
+		}
 	}
 }
 
@@ -349,4 +349,12 @@ func abs(lbl label.Label, repo string, pkg string) label.Label {
 		lbl.Relative = false
 		return lbl
 	}
+}
+
+func bootSuffixIf(b bool) string {
+	res := ""
+	if b {
+		res = BOOT_EXTENSION
+	}
+	return res
 }

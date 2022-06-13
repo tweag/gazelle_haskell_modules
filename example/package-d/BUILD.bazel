@@ -1,0 +1,44 @@
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
+load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
+
+haskell_library(
+    name = "package-d",
+    compiler_flags = [
+        "-XScopedTypeVariables",
+        "-lm",
+    ],
+    data = ["CHANGELOG.md", "README.md"],
+    srcs = [
+        "src/PackageD/A.hs",
+        "src/PackageD/B.hs",
+        "src/PackageD/A.hs-boot"
+    ],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@stackage//:base",
+        "@stackage//:void",
+    ],
+)
+
+# gazelle_haskell_modules:keep
+haskell_test(
+    name = "test",
+    srcs = [
+        "tests/Main.hs",
+        "tests/PackageD/C.hs",
+    ],
+    compiler_flags = [
+        "-DVERSION_package_d=\"0.1.0.0\"",
+        "-DTASTY_DISCOVER_TASTY_DISCOVER_PATH=$(location @stackage-exe//tasty-discover)",
+    ],
+    tools = ["@stackage-exe//tasty-discover"],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":package-d",
+        "@stackage//:base",
+        "@stackage//:tasty",
+        "@stackage//:tasty-hunit",
+    ],
+)
