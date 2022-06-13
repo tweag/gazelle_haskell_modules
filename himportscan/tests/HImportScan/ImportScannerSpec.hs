@@ -185,3 +185,14 @@ spec_scanImports = do
          >
          > f = 1
        |]
+    it "should accept source import" $ do
+      testSource "M" [m "A.B.C", ModuleImport SourceImport Nothing "A.B.D"] False False [s|
+         module M where
+
+         import A.B.C
+         import {-# SOURCE #-} A.B.D
+
+         f = 1
+       |]
+    it "should accept boot file" $ do
+      testSourceWithFile "dummy.hs-boot" "Main" [m "A.B.C"] False True "import A.B.C"

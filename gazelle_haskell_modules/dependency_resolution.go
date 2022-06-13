@@ -139,8 +139,6 @@ func findModuleLabelByModuleName(
 
 	var foundLabel label.Label
 	for _, r := range res {
-		// When looking for the label, we ignore the `hs-boot` version of the file,
-		// since it would lead to collision when investigating for the library associated to this module name.
 		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
 		if len(intersection) > 0 {
 			if foundLabel.Name != "" {
@@ -158,8 +156,6 @@ func findModuleLabelByModuleName(
 		}
 	}
 	if foundLabel.Name != "" {
-		// Since those names were ignored in the first computation,
-		// we need to add the suffix, whenever we are studying a source import.
 		foundLabel.Name = foundLabel.Name
 		return &foundLabel, nil
 	} else {
