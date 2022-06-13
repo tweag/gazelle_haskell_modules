@@ -156,7 +156,6 @@ func findModuleLabelByModuleName(
 		}
 	}
 	if foundLabel.Name != "" {
-		foundLabel.Name = foundLabel.Name
 		return &foundLabel, nil
 	} else {
 		return nil, nil
