@@ -1,1 +1,0 @@
-This example comes from the GHC documentation: https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/separate_compilation.html#how-to-compile-mutually-recursive-modules
