@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RecordWildCards #-}
 module HImportScan.ImportScannerSpec where
 
 import Data.Char (isSpace)
@@ -23,17 +24,23 @@ instance Show NicelyPrinted where
   show (NicelyPrinted si) = Text.unpack $ showScannedImports si
 
 showScannedImports :: ScannedImports -> Text
-showScannedImports si = Text.unlines $ map ("    " <>) $
+showScannedImports ScannedImports{..} = Text.unlines $ map ("    " <>) $
     [ ""
-    , filePath si
-    , moduleName si
+    , filePath
+    , moduleName
     ] ++
-    map (("  " <>) . showImport) (Set.toList $ importedModules si) ++
-    [ "usesTH = " <> Text.pack (show $ usesTH si)
+    map (("  " <>) . showImport) (Set.toList importedModules) ++
+    [ "usesTH = " <> Text.pack (show usesTH)
+    , "isBoot = " <> Text.pack (show isBoot)
     ]
   where
-    showImport (ModuleImport _ (Just pkg) x) = Text.pack (show pkg) <> " " <> x
-    showImport (ModuleImport _ Nothing x) = x
+    showImport (ModuleImport importMethod (Just pkg) x) =
+      Text.pack (show pkg) <> " " <> x <> showImportMethodExtension importMethod
+    showImport (ModuleImport importMethod Nothing x) =
+      x <> showImportMethodExtension importMethod
+
+    showImportMethodExtension SourceImport = ".hs-boot"
+    showImportMethodExtension NormalImport = ""
 
 -- |
 --
@@ -50,40 +57,41 @@ stripIndentation t =
       let (spaces, rest) = Text.span isSpace line
        in if Text.length rest == 0 then maxBound else Text.length spaces
 
-testSource :: Text -> Set ModuleImport -> Bool -> Text -> IO ()
+testSource :: Text -> Set ModuleImport -> Bool -> Bool -> Text -> IO ()
 testSource = testSourceWithFile "dummy.hs"
 
-testSourceWithFile :: FilePath -> Text -> Set ModuleImport -> Bool -> Text -> IO ()
-testSourceWithFile file moduleName importedModules usesTH contents = do
+testSourceWithFile :: FilePath -> Text -> Set ModuleImport -> Bool -> Bool -> Text -> IO ()
+testSourceWithFile file moduleName importedModules usesTH isBoot contents = do
     fmap NicelyPrinted (scanImports file $ stripIndentation contents)
       `shouldReturn` NicelyPrinted ScannedImports
         { filePath = Text.pack file
         , moduleName
         , importedModules
         , usesTH
+        , isBoot
         }
 
 spec_scanImports :: Spec
 spec_scanImports = do
     let m = ModuleImport NormalImport Nothing
     it "should accept empty files" $
-      testSource "Main" [] False ""
+      testSource "Main" [] False False ""
     it "should find an import" $
-      testSource "Main" [m "A.B.C"] False "import A.B.C"
+      testSource "Main" [m "A.B.C"] False False "import A.B.C"
     it "should find multiple imports" $
-      testSource "Main" [m "A.B.C", m "A.B.D"] False [s|
+      testSource "Main" [m "A.B.C", m "A.B.D"] False False [s|
          import A.B.C
          import A.B.D
       |]
     it "should accept module headers" $
-      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
+      testSource "M" [m "A.B.C", m "A.B.D"] False False [s|
          module M where
 
          import A.B.C
          import A.B.D
       |]
     it "should accept post fix qualified imports" $
-      testSource "M" [m "A.B.C", m "A.B.D", m "A.B.E"] False [s|
+      testSource "M" [m "A.B.C", m "A.B.D", m "A.B.E"] False False [s|
          module M where
 
          import A.B.C
@@ -97,6 +105,7 @@ spec_scanImports = do
         , ModuleImport NormalImport (Just "package-b") "A.B.D"
         ]
         False
+        False
         [s|
            module M where
 
@@ -104,7 +113,7 @@ spec_scanImports = do
            import qualified "package-b" A.B.D
          |]
     it "should accept declarations after imports" $
-      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
+      testSource "M" [m "A.B.C", m "A.B.D"] False False [s|
          module M where
 
          import A.B.C
@@ -113,7 +122,7 @@ spec_scanImports = do
          f = 1
       |]
     it "should skip CPP directives" $ do
-      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
+      testSource "M" [m "A.B.C", m "A.B.D"] False False [s|
          module M where
 
          #define a_multiline macro \
@@ -124,7 +133,7 @@ spec_scanImports = do
          f = 1
       |]
     it "should skip comments" $ do
-      testSource "M" [m "A.B.C", m "A.B.D"] False [s|
+      testSource "M" [m "A.B.C", m "A.B.D"] False False [s|
          -- | Some module
          module M where
 
@@ -135,7 +144,7 @@ spec_scanImports = do
          f = 1
        |]
     it "should recognize TemplateHaskell in language pragmas" $ do
-      testSource "M" [m "A.B.C", m "A.B.D"] True [s|
+      testSource "M" [m "A.B.C", m "A.B.D"] True False [s|
          {-# LANGUAGE CPP #-}
          {-# LANGUAGE TemplateHaskell #-}
          module M where
@@ -146,7 +155,7 @@ spec_scanImports = do
          f = 1
        |]
     it "should recognize TemplateHaskell in language pragmas with multiple extensions" $ do
-      testSource "M" [m "A.B.C", m "A.B.D"] True [s|
+      testSource "M" [m "A.B.C", m "A.B.D"] True False [s|
          {-# LANGUAGE CPP #-}
          {-# LANGUAGE OverloadedStrings, TemplateHaskell, TypeApplications #-}
          module M where
@@ -157,7 +166,7 @@ spec_scanImports = do
          f = 1
        |]
     it "should recognize TemplateHaskell when QuasiQuotes is used" $ do
-      testSource "M" [m "A.B.C", m "A.B.D"] True [s|
+      testSource "M" [m "A.B.C", m "A.B.D"] True False [s|
          {-# LANGUAGE CPP #-}
          {-# LANGUAGE QuasiQuotes #-}
          module M where
@@ -168,7 +177,7 @@ spec_scanImports = do
          f = 1
        |]
     it "should accept literate Haskell" $ do
-      testSourceWithFile "dummy.lhs" "M" [m "A.B.C", m "A.B.D"] False [s|
+      testSourceWithFile "dummy.lhs" "M" [m "A.B.C", m "A.B.D"] False False [s|
          > module M where
          >
          > import A.B.C

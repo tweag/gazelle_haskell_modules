@@ -36,7 +36,8 @@ const PRIVATE_ATTR_DEP_LABELS = "dep_labels"
 const PRIVATE_ATTR_MODULE_NAME = "module_name"
 const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
 const PRIVATE_FIND_MODULES_DIRECTIVE = "gazelle_haskell_modules:srcs:"
-const PRIVATE_ATTR_BOOT_EXTENSION = ".hs-boot"
+const PRIVATE_ATTR_IS_BOOT = "is_source_importation"
+const BOOT_EXTENSION = ".hs-boot"
 
 var PRIVATE_STRIP_FIND_MODULES_DIRECTIVE = regexp.MustCompile(fmt.Sprintf(`#\s*%s(.*)`, PRIVATE_FIND_MODULES_DIRECTIVE))
 
@@ -129,6 +130,7 @@ func haskellModuleRulesToRuleInfos(
 
 			ruleInfoss = append(ruleInfoss, []*RuleInfo{&ruleInfo})
 
+			r.SetPrivateAttr(PRIVATE_ATTR_IS_BOOT, ruleInfo.ModuleData.IsBoot)
 			r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
 			r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
 		} else {
@@ -196,6 +198,7 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 	for i, ruleInfo := range ruleInfos {
 		ruleName := ruleNameFromRuleInfo(ruleInfo)
 		r := rule.NewRule("haskell_module", ruleName)
+		r.SetPrivateAttr(PRIVATE_ATTR_IS_BOOT, ruleInfo.ModuleData.IsBoot)
 		r.SetPrivateAttr(PRIVATE_ATTR_MODULE_NAME, ruleInfo.ModuleData.ModuleName)
 		r.SetPrivateAttr(PRIVATE_ATTR_ORIGINATING_RULE, ruleInfo.OriginatingRules)
 		file, _ := filepath.Rel(pkgRoot, ruleInfo.ModuleData.FilePath)
@@ -392,33 +395,13 @@ type ModuleData struct {
 	FilePath        string
 	ImportedModules []ModuleImport
 	UsesTH          bool
+	IsBoot          bool
 }
 
 type ModuleImport struct {
-	PackageName string
-	ModuleName  string
-}
-
-type TempModuleImport struct {
 	IsSourceImported bool
-	ModuleName       []string
-}
-
-func (moduleImport *ModuleImport) UnmarshalJSON(data []byte) error {
-	var tempMod TempModuleImport
-	if err := json.Unmarshal(data, &tempMod); err != nil {
-		return err
-	}
-	aux := tempMod.ModuleName
-	pkgName := ""
-	if len(aux) > 1 {
-		pkgName = aux[0]
-	}
-	moduleImport.PackageName = pkgName
-	// We add the suffix `.hs-boot` to the module name,
-	// when this module comes from an `hs-boot` file.
-	moduleImport.ModuleName = aux[len(aux)-1] + bootSuffixIf(tempMod.IsSourceImported)
-	return nil
+	PackageName      string
+	ModuleName       string
 }
 
 type RuleInfo struct {
@@ -543,7 +526,7 @@ func srcStripPrefix(file, modName string) string {
 }
 
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
-	suffix := bootSuffixIf(isBoot(ruleInfo.ModuleData.FilePath))
+	suffix := bootSuffixIf(ruleInfo.ModuleData.IsBoot)
 	return ruleInfo.OriginatingRules[0].Name() + "." + ruleInfo.ModuleData.ModuleName + suffix
 }
 

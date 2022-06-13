@@ -3,7 +3,6 @@ package gazelle_haskell_modules
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/bazelbuild/bazel-gazelle/label"
 	"github.com/bazelbuild/bazel-gazelle/resolve"
@@ -136,42 +135,32 @@ func findModuleLabelByModuleName(
 	libs []label.Label,
 ) (*label.Label, error) {
 	spec := moduleByModuleImportSpec(moduleImport)
-	isBootDep := false
-	// If the module we are considering comes from an `hs-boot` file,
-	// we store this in the `isBootDep` variable and then
-	// behave as if we were considering the standard version of ther module.
-	if isBoot(spec.Imp) {
-		isBootDep = true
-		spec.Imp = strings.TrimSuffix(spec.Imp, PRIVATE_ATTR_BOOT_EXTENSION)
-	}
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
 	for _, r := range res {
 		// When looking for the label, we ignore the `hs-boot` version of the file,
 		// since it would lead to collision when investigating for the library associated to this module name.
-		if !isBoot(r.Label.Name) {
-			intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
-			if len(intersection) > 0 {
-				if foundLabel.Name != "" {
-					return nil, fmt.Errorf(
-						"Multiple rules define %q:%s in %v: %v and %v",
-						moduleImport.PackageName,
-						moduleImport.ModuleName,
-						intersection,
-						foundLabel,
-						r.Label,
-					)
-				} else {
-					foundLabel = r.Label
-				}
+		intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
+		if len(intersection) > 0 {
+			if foundLabel.Name != "" {
+				return nil, fmt.Errorf(
+					"Multiple rules define %q:%s in %v: %v and %v",
+					moduleImport.PackageName,
+					moduleImport.ModuleName,
+					intersection,
+					foundLabel,
+					r.Label,
+				)
+			} else {
+				foundLabel = r.Label
 			}
 		}
 	}
 	if foundLabel.Name != "" {
 		// Since those names were ignored in the first computation,
 		// we need to add the suffix, whenever we are studying a source import.
-		foundLabel.Name = foundLabel.Name + bootSuffixIf(isBootDep)
+		foundLabel.Name = foundLabel.Name
 		return &foundLabel, nil
 	} else {
 		return nil, nil
@@ -305,16 +294,16 @@ func libraryOfModuleSpec(moduleLabel label.Label) resolve.ImportSpec {
 }
 
 func moduleByModuleImportSpec(moduleImport *ModuleImport) resolve.ImportSpec {
-	return resolve.ImportSpec{
-		gazelleHaskellModulesName,
-		fmt.Sprintf("module_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
-	}
-}
-
-func moduleByPackageImportSpec(pkgName string, moduleName string) resolve.ImportSpec {
-	return resolve.ImportSpec{
-		gazelleHaskellModulesName,
-		fmt.Sprintf("module_name:%s:%s", pkgName, moduleName),
+	if moduleImport.IsSourceImported {
+		return resolve.ImportSpec{
+			gazelleHaskellModulesName,
+			fmt.Sprintf("module_source_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
+		}
+	} else {
+		return resolve.ImportSpec{
+			gazelleHaskellModulesName,
+			fmt.Sprintf("module_name:%s:%s", moduleImport.PackageName, moduleImport.ModuleName),
+		}
 	}
 }
 
@@ -367,14 +356,10 @@ func abs(lbl label.Label, repo string, pkg string) label.Label {
 	}
 }
 
-func isBoot(s string) bool {
-	return strings.HasSuffix(s, PRIVATE_ATTR_BOOT_EXTENSION)
-}
-
 func bootSuffixIf(b bool) string {
 	res := ""
 	if b {
-		res = PRIVATE_ATTR_BOOT_EXTENSION
+		res = BOOT_EXTENSION
 	}
 	return res
 }

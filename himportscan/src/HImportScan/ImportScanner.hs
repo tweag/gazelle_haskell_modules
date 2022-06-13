@@ -22,7 +22,6 @@ import Control.Exception (throwIO)
 import qualified Data.Aeson as Aeson
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
-import Data.Maybe (catMaybes)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -39,36 +38,48 @@ data ScannedImports = ScannedImports
   , moduleName :: Text  -- ^ The module name
   , importedModules :: Set ModuleImport -- ^ The modules imported in this module
   , usesTH :: Bool  -- ^ Whether the module needs TH or the interpreter
+  , isBoot :: Bool -- ^ Whether the module is a boot module
   }
   deriving Eq
 
 -- | A module import holds a module name and an optional package name
 -- when using package imports.
 -- It also stores if the import was a normal or a source import.
-data ModuleImport = ModuleImport ImportMethod (Maybe Text) Text
+data ModuleImport = ModuleImport
+  { isSourceImported :: ImportMethod
+  , packageName :: Maybe Text
+  , moduleName :: Text
+  }
   deriving (Eq, Ord)
 
 data ImportMethod = SourceImport | NormalImport
   deriving (Eq, Ord)
 
 instance Aeson.ToJSON ScannedImports where
-  toJSON (ScannedImports filePath moduleName importedModules usesTH) =
-    Aeson.object
+  toJSON (ScannedImports filePath moduleName importedModules usesTH isBoot) =
+    Aeson.object $
       [ ("filePath", Aeson.String filePath)
       , ("moduleName", Aeson.String moduleName)
       , ("importedModules", Aeson.toJSON importedModules)
-      , ("usesTH", Aeson.toJSON usesTH)
-      ]
+      ] ++
+      [ ("usesTH", Aeson.toJSON True) | usesTH] ++
+      [ ("isBoot", Aeson.toJSON True) | isBoot]
 
--- Since it is easier to store in JSON format,
--- the type `ImportMethod`, isomorphic to `Bool`
--- is casted during the translation to JSON.
 instance Aeson.ToJSON ModuleImport where
   toJSON (ModuleImport importMethod maybePackageName moduleName) =
-    Aeson.object
-      [ ("isSourceImported", Aeson.Bool (importMethod == SourceImport))
-      , ("moduleName", Aeson.toJSON $ catMaybes [maybePackageName, Just moduleName])
-      ]
+    Aeson.object $
+      -- Here we rely on the default value in Golang for booleans (false)
+      -- to avoid storing a boolean in the JSON file whenever one is not doing a source import.
+      [("isSourceImported", Aeson.Bool True) | importMethod == SourceImport] ++
+      -- Here again, the default Golang value for string is "",
+      -- hence we do not write this field in case it is not necessary.
+      packageNameField ++
+      [ ("moduleName", Aeson.String moduleName) ]
+    where
+      packageNameField =
+        case maybePackageName of
+          Nothing -> []
+          Just s -> [ ("packageName", Aeson.String s) ]
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
@@ -100,9 +111,9 @@ scanImports filePath contents = do
     -- [GL] The fact that the resulting strings here contain the "-X"s makes me a bit doubtful that this is the right approach,
     -- but this is what I found for now.
     usesTH =
-      any (`elem` ["-XTemplateHaskell", "-XQuasiQuotes"]) $
-        map GHC.unLoc $
-          GHC.getOptions dynFlagsWithExtensions sb filePath
+      any ((`elem` ["-XTemplateHaskell", "-XQuasiQuotes"]) . GHC.unLoc)
+        (GHC.getOptions dynFlagsWithExtensions sb filePath)
+    isBoot = ".hs-boot" `isSuffixOf` filePath
   GHC.getImports dynFlagsWithExtensions sb filePath filePath >>= \case
     -- It's important that we error in this case to signal to the user that
     -- something needs fixing in the source file.
@@ -123,6 +134,7 @@ scanImports filePath contents = do
                       (moduleNameToText locatedModuleName)
                  in Set.fromList $ map toModuleImport $ map (SourceImport,) sourceImports ++ map (NormalImport,) normalImports
             , usesTH
+            , isBoot
             }
   where
     preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
