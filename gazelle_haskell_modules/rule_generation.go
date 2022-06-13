@@ -36,6 +36,7 @@ const PRIVATE_ATTR_DEP_LABELS = "dep_labels"
 const PRIVATE_ATTR_MODULE_NAME = "module_name"
 const PRIVATE_ATTR_ORIGINATING_RULE = "originating_rule"
 const PRIVATE_FIND_MODULES_DIRECTIVE = "gazelle_haskell_modules:srcs:"
+const PRIVATE_ATTR_BOOT_EXTENSION = ".hs-boot"
 
 var PRIVATE_STRIP_FIND_MODULES_DIRECTIVE = regexp.MustCompile(fmt.Sprintf(`#\s*%s(.*)`, PRIVATE_FIND_MODULES_DIRECTIVE))
 
@@ -413,14 +414,10 @@ func (moduleImport *ModuleImport) UnmarshalJSON(data []byte) error {
 	if len(aux) > 1 {
 		pkgName = aux[0]
 	}
-	suffix := ""
+	moduleImport.PackageName = pkgName
 	// We add the suffix `.hs-boot` to the module name,
 	// when this module comes from an `hs-boot` file.
-	if tempMod.IsSourceImported {
-		suffix = ".hs-boot"
-	}
-	moduleImport.PackageName = pkgName
-	moduleImport.ModuleName = aux[len(aux)-1] + suffix
+	moduleImport.ModuleName = aux[len(aux)-1] + bootSuffixIf(tempMod.IsSourceImported)
 	return nil
 }
 
@@ -546,10 +543,7 @@ func srcStripPrefix(file, modName string) string {
 }
 
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
-	suffix := ""
-	if strings.HasSuffix(ruleInfo.ModuleData.FilePath, ".hs-boot") {
-		suffix = ".hs-boot"
-	}
+	suffix := bootSuffixIf(isBoot(ruleInfo.ModuleData.FilePath))
 	return ruleInfo.OriginatingRules[0].Name() + "." + ruleInfo.ModuleData.ModuleName + suffix
 }
 
