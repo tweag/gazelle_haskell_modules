@@ -1,4 +1,4 @@
-module PackageC.C where
+module PackageD.C where
 
 import Test.Tasty (TestTree)
 import Test.Tasty.HUnit (testCase)

@@ -137,15 +137,20 @@ func findModuleLabelByModuleName(
 ) (*label.Label, error) {
 	spec := moduleByModuleImportSpec(moduleImport)
 	isBootDep := false
-	if strings.HasSuffix(spec.Imp, "-boot") {
+	// If the module we are considering comes from an `hs-boot` file,
+	// we store this in the `isBootDep` variable and then
+	// behave as if we were considering the standard version of ther module.
+	if strings.HasSuffix(spec.Imp, ".hs-boot") {
 		isBootDep = true
-		spec.Imp = strings.TrimSuffix(spec.Imp, "-boot")
+		spec.Imp = strings.TrimSuffix(spec.Imp, ".hs-boot")
 	}
 	res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
 	var foundLabel label.Label
 	for _, r := range res {
-		if !strings.HasSuffix(r.Label.Name, "-boot") {
+		// When looking for the label, we ignore the `hs-boot` version of the file,
+		// since it would lead to collision when investigating for the library associated to this module name.
+		if !strings.HasSuffix(r.Label.Name, ".hs-boot") {
 			intersection := intersectLabelArrays(librariesOfModule(ix, r.Label), libs)
 			if len(intersection) > 0 {
 				if foundLabel.Name != "" {
@@ -164,8 +169,10 @@ func findModuleLabelByModuleName(
 		}
 	}
 	if foundLabel.Name != "" {
+		// Since those names were ignored in the first computation,
+		// we need to add the suffix, whenever we are studying a source import.
 		if isBootDep {
-			foundLabel.Name = foundLabel.Name + "-boot"
+			foundLabel.Name = foundLabel.Name + ".hs-boot"
 		}
 		return &foundLabel, nil
 	} else {

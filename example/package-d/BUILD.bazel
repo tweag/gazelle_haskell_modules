@@ -1,18 +1,18 @@
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 
 haskell_library(
-    name = "package-c",
-    srcs = [
-        "src/PackageC/A.hs",
-        "src/PackageC/B.hs",
-        "src/PackageC/A.hs-boot"
-    ],
+    name = "package-d",
     compiler_flags = [
-        "-DVERSION_package_c=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
     ],
-    data = ["CHANGELOG.md"],
+    data = ["CHANGELOG.md", "README.md"],
+    srcs = [
+        "src/PackageD/A.hs",
+        "src/PackageD/B.hs",
+        "src/PackageD/A.hs-boot"
+    ],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
@@ -26,17 +26,17 @@ haskell_test(
     name = "test",
     srcs = [
         "tests/Main.hs",
-        "tests/PackageC/C.hs",
+        "tests/PackageD/C.hs",
     ],
     compiler_flags = [
-        "-DVERSION_package_c=\"0.1.0.0\"",
+        "-DVERSION_package_d=\"0.1.0.0\"",
         "-DTASTY_DISCOVER_TASTY_DISCOVER_PATH=$(location @stackage-exe//tasty-discover)",
     ],
     tools = ["@stackage-exe//tasty-discover"],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
-        ":package-c",
+        ":package-d",
         "@stackage//:base",
         "@stackage//:tasty",
         "@stackage//:tasty-hunit",

@@ -12,6 +12,7 @@
 module HImportScan.ImportScanner
   ( ScannedImports(..)
   , ModuleImport(..)
+  , ImportMethod(..)
   , scanImports
   , scanImportsFromFile
   ) where

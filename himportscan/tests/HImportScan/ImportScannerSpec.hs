@@ -10,7 +10,7 @@ import qualified Data.Set as Set
 import Data.String.QQ (s)
 import Data.Text (Text)
 import qualified Data.Text as Text
-import HImportScan.ImportScanner (ModuleImport(..), ScannedImports(..), scanImports)
+import HImportScan.ImportScanner (ModuleImport(..), ScannedImports(..), ImportMethod(..), scanImports)
 import Test.Hspec
 
 
@@ -32,8 +32,8 @@ showScannedImports si = Text.unlines $ map ("    " <>) $
     [ "usesTH = " <> Text.pack (show $ usesTH si)
     ]
   where
-    showImport (ModuleImport (Just pkg) x) = Text.pack (show pkg) <> " " <> x
-    showImport (ModuleImport Nothing x) = x
+    showImport (ModuleImport _ (Just pkg) x) = Text.pack (show pkg) <> " " <> x
+    showImport (ModuleImport _ Nothing x) = x
 
 -- |
 --
@@ -65,7 +65,7 @@ testSourceWithFile file moduleName importedModules usesTH contents = do
 
 spec_scanImports :: Spec
 spec_scanImports = do
-    let m = ModuleImport Nothing
+    let m = ModuleImport NormalImport Nothing
     it "should accept empty files" $
       testSource "Main" [] False ""
     it "should find an import" $
@@ -93,8 +93,8 @@ spec_scanImports = do
     it "should accept package imports" $
       testSource
         "M"
-        [ ModuleImport (Just "package-a") "A.B.C"
-        , ModuleImport (Just "package-b") "A.B.D"
+        [ ModuleImport NormalImport (Just "package-a") "A.B.C"
+        , ModuleImport NormalImport (Just "package-b") "A.B.D"
         ]
         False
         [s|

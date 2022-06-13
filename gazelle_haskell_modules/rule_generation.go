@@ -414,8 +414,10 @@ func (moduleImport *ModuleImport) UnmarshalJSON(data []byte) error {
 		pkgName = aux[0]
 	}
 	suffix := ""
+	// We add the suffix `.hs-boot` to the module name,
+	// when this module comes from an `hs-boot` file.
 	if tempMod.IsSourceImported {
-		suffix = "-boot"
+		suffix = ".hs-boot"
 	}
 	moduleImport.PackageName = pkgName
 	moduleImport.ModuleName = aux[len(aux)-1] + suffix
@@ -545,8 +547,8 @@ func srcStripPrefix(file, modName string) string {
 
 func ruleNameFromRuleInfo(ruleInfo *RuleInfo) string {
 	suffix := ""
-	if strings.HasSuffix(ruleInfo.ModuleData.FilePath, "-boot") {
-		suffix = "-boot"
+	if strings.HasSuffix(ruleInfo.ModuleData.FilePath, ".hs-boot") {
+		suffix = ".hs-boot"
 	}
 	return ruleInfo.OriginatingRules[0].Name() + "." + ruleInfo.ModuleData.ModuleName + suffix
 }
