@@ -1,5 +1,9 @@
+{-#LANGUAGE CPP #-}
+
+#if __GLASGOW_HASKELL__ == 810
+
 -- | A module abstracting the provenance of GHC API names
-module HImportScan.GHC(module X) where
+module HImportScan.GHC8_10 (module X) where
 
 import DynFlags as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import EnumSet as X (empty, fromList)
@@ -40,3 +44,9 @@ import SrcLoc as X
   , unLoc
   )
 import StringBuffer as X (StringBuffer(StringBuffer), stringToStringBuffer)
+
+#else
+
+module HImportScan.GHC8_10 where
+
+#endif

@@ -8,9 +8,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_haskell",
-    sha256 = "c3c85b886a64010c913a7700b0594dbd4204170b1ec00d1afb5f411868e7c54b",
-    strip_prefix = "rules_haskell-af979957c18e11693d4daba606143a7a362af4b1",
-    urls = ["https://github.com/tweag/rules_haskell/archive/af979957c18e11693d4daba606143a7a362af4b1.zip"],
+    sha256 = "57e55ca74c9dd2710da852c6c9a70fc0274f038ff37216b6c48fd9389bbfbce7",
+    strip_prefix = "rules_haskell-b8ac6c18d26c0011a2464200762e45302a70bbf6",
+    urls = ["https://github.com/tweag/rules_haskell/archive/b8ac6c18d26c0011a2464200762e45302a70bbf6.zip"],
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
@@ -56,13 +56,13 @@ stack_snapshot(
         "tasty-discover",
         "tasty-hspec",
     ],
-    snapshot = "lts-18.1",
+    snapshot = "nightly-2022-06-14",
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc922",
     compiler_flags = [
         "-Werror",
         "-Wall",
@@ -71,7 +71,7 @@ haskell_register_ghc_nixpkgs(
         "-Wredundant-constraints",
     ],
     repository = "@nixpkgs",
-    version = "8.10.7",
+    version = "9.2.2",
 )
 
 ###############

@@ -8,6 +8,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP #-}
 
 module HImportScan.ImportScanner
   ( ScannedImports(..)
@@ -28,9 +29,16 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.IO as Text
-import HImportScan.GHC as GHC
 import qualified HImportScan.GHC.Settings as GHC.Settings
 import System.Directory (doesFileExist)
+
+#if __GLASGOW_HASKELL__ >= 902
+import HImportScan.GHC9_2 as GHC
+#elif __GLASGOW_HASKELL__ == 900
+import HImportScan.GHC9_0 as GHC
+#else
+import HImportScan.GHC8_10 as GHC
+#endif
 
 -- | Holds the names of modules imported in a Haskell module.
 data ScannedImports = ScannedImports
