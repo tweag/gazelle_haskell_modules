@@ -1,0 +1,7 @@
+resolver: nightly-2022-06-14
+
+packages:
+- git: https://github.com/facundominguez/cabal
+  commit: ec1d61092f98be0d1dc8a9e743628c8f89f838ed
+  subdirs:
+    - Cabal
