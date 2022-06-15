@@ -1,0 +1,7 @@
+resolver: nightly-2022-06-15
+
+packages:
+- git: https://github.com/tweag/cabal
+  commit: 79e394a3832da9b9f8de78986f47acfec20944c7
+  subdirs:
+  - Cabal

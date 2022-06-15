@@ -48,7 +48,11 @@ stack_snapshot(
             "exe:tasty-discover",
         ],
     },
+    setup_deps = {
+        "transformers-compat": ["@stackage//:Cabal"]
+    },
     packages = [
+        "Cabal",
         "aeson",
         "hspec",
         "string-qq",
@@ -56,7 +60,7 @@ stack_snapshot(
         "tasty-discover",
         "tasty-hspec",
     ],
-    snapshot = "nightly-2022-06-14",
+    local_snapshot = "//:snapshot.yaml",
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
