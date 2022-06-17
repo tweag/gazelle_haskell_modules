@@ -49,7 +49,17 @@ stack_snapshot(
         ],
     },
     setup_deps = {
-        "transformers-compat": ["@stackage//:Cabal"]
+        "transformers-compat": ["@stackage//:Cabal"],
+        "hspec-discover": ["@stackage//:Cabal"],
+        "call-stack": ["@stackage//:Cabal"],
+        "HUnit": ["@stackage//:Cabal"],
+        "quickcheck": ["@stackage//:Cabal"],
+        "hspec-expectations": ["@stackage//:Cabal"],
+        "quickcheck-io": ["@stackage//:Cabal"],
+        "tasty-discover": ["@stackage//:Cabal"],
+        "hspec-core": ["@stackage//:Cabal"],
+        "bifunctors": ["@stackage//:Cabal"],
+        "hspec": ["@stackage//:Cabal"],
     },
     packages = [
         "Cabal",
