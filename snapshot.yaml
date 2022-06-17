@@ -1,5 +1,1 @@
-resolver: lts-19.11
-
-packages:
-- git: https://github.com/tweag/attoparsec
-  commit: 431508dcaa6d2471693d7f0cd40167334f1d0a8a
+resolver: lts-18.28
