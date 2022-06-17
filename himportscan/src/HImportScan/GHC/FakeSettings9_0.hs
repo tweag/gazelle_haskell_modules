@@ -26,6 +26,7 @@ fakeSettings = Settings
   { sGhcNameVersion=ghcNameVersion
   , sFileSettings=fileSettings
   , sTargetPlatform=platform
+  , sPlatformConstants=platformConstants
   , sPlatformMisc=platformMisc
   , sToolSettings=toolSettings
   , sRawSettings=[]
@@ -43,7 +44,6 @@ fakeSettings = Settings
     platform =
       Platform{
         platformWordSize=PW8
-      , platformArchOS=ArchOS {archOS_arch=ArchUnknown, archOS_OS=OSUnknown}
       , platformByteOrder = LittleEndian
       , platformUnregisterised=True
       , platformHasGnuNonexecStack = False
@@ -52,8 +52,10 @@ fakeSettings = Settings
       , platformIsCrossCompiling = False
       , platformLeadingUnderscore = False
       , platformTablesNextToCode = False
-      , platform_constants = Nothing
+      , platformMini=PlatformMini {platformMini_arch=ArchUnknown, platformMini_os=OSUnknown}
       }
+    platformConstants =
+      PlatformConstants{pc_DYNAMIC_BY_DEFAULT=False,pc_WORD_SIZE=8}
 
 fakeLlvmConfig :: LlvmConfig
 fakeLlvmConfig = LlvmConfig [] []

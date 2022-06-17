@@ -68,12 +68,10 @@ imports ::
       )
     )
 imports dynFlagsWithExtensions sb filePath =
-  let implicitPrelude =
-        not $
-          any ((`elem` ["-XNoImplicitPrelude"]) . unLoc)
-            (getOptions dynFlagsWithExtensions sb filePath)
-  in
-  getImports (initOpts dynFlagsWithExtensions) implicitPrelude sb filePath filePath
+  -- [GG] We should never care about the Prelude import,
+  -- since it is always a module from an external library.
+  -- Hence the `False`.
+  getImports (initOpts dynFlagsWithExtensions) False sb filePath filePath
 
 handleParseError :: DynFlags -> Bag PsError -> IO a
 handleParseError dynFlagsWithExtensions err = do

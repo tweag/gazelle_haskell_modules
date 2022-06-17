@@ -7,6 +7,7 @@ module HImportScan.GHC8_10 (module , imports, handleParseError) where
 
 import HImportScan.GHC.FakeSettings8_10 as X
 
+import Control.Exception (throwIO)
 import DynFlags as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import EnumSet as X (empty, fromList)
 import ErrUtils as X (printBagOfErrors)
@@ -45,13 +46,26 @@ import SrcLoc as X
   , unLoc
   )
 import StringBuffer as X (StringBuffer(StringBuffer), stringToStringBuffer)
+import GHC.Data.Bag (Bag)
 
+imports ::
+  DynFlags ->
+  StringBuffer ->
+  FilePath ->
+  IO
+    ( Either
+      (Bag ErrMsg)
+      ( [(Maybe FastString, Located ModuleName)],
+        [(Maybe FastString, Located ModuleName)], Located ModuleName
+      )
+    )
 imports dynFlagsWithExtensions sb filePath =
   getImports dynFlagsWithExtensions sb filePath filePath
 
+handleParseError :: DynFlags -> Bag ErrMsg -> IO a
 handleParseError dynFlagsWithExtensions err = do
-  GHC.printBagOfErrors dynFlagsWithExtensions err
-  throwIO (GHC.mkSrcErr err)
+  printBagOfErrors dynFlagsWithExtensions err
+  throwIO (mkSrcErr err)
 
 #else
 
