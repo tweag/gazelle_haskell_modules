@@ -51,6 +51,7 @@ fakeSettings = Settings
 
 fakeLlvmConfig :: LlvmConfig
 fakeLlvmConfig = LlvmConfig [] []
+
 #else
 
 module HImportScan.GHC.FakeSettings8_10 where

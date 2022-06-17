@@ -7,9 +7,10 @@ module HImportScan.GHC9_0 (module X, imports, handleParseError) where
 
 import HImportScan.GHC.FakeSettings9_0 as X
 
+import Control.Exception (throwIO)
 import GHC.Driver.Session as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import GHC.Data.EnumSet as X (empty, fromList)
-import GHC.Utils.Error as X (printBagOfErrors)
+import GHC.Utils.Error as X (printBagOfErrors, ErrMsg)
 import GHC.Data.FastString as X (FastString, mkFastString, bytesFS)
 import GHC as X (runGhc, getSessionDynFlags)
 import GHC.LanguageExtensions as X
@@ -45,23 +46,26 @@ import GHC.Types.SrcLoc as X
   , unLoc
   )
 import GHC.Data.StringBuffer as X (StringBuffer(StringBuffer), stringToStringBuffer)
+import GHC.Data.Bag (Bag)
 
-initOpts :: DynFlags -> ParserOpts
-initOpts = initParserOpts
-
+imports ::
+  DynFlags ->
+  StringBuffer ->
+  FilePath ->
+  IO
+    ( Either
+      (Bag ErrMsg)
+      ( [(Maybe FastString, Located ModuleName)],
+        [(Maybe FastString, Located ModuleName)], Located ModuleName
+      )
+    )
 imports dynFlagsWithExtensions sb filePath =
-  let implicitPrelude =
-        not $
-          any ((`elem` ["-XNoImplicitPrelude"]) . GHC.unLoc)
-            (GHC.getOptions dynFlagsWithExtensions sb filePath)
-  in
-  GHC.getImports (GHC.initOpts dynFlagsWithExtensions) implicitPrelude sb filePath
+  getImports dynFlagsWithExtensions sb filePath filePath
 
+handleParseError :: DynFlags -> Bag ErrMsg -> IO a
 handleParseError dynFlagsWithExtensions err = do
-  logger <- initLogger
-  let errEnvelope = GHC.pprError <$> err
-  GHC.printBagOfErrors logger dynFlagsWithExtensions errEnvelope
-  throwIO (GHC.mkSrcErr errEnvelope)
+  printBagOfErrors dynFlagsWithExtensions err
+  throwIO (mkSrcErr err)
 
 #else
 

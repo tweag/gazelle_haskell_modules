@@ -48,21 +48,7 @@ stack_snapshot(
             "exe:tasty-discover",
         ],
     },
-    setup_deps = {
-        "transformers-compat": ["@stackage//:Cabal"],
-        "hspec-discover": ["@stackage//:Cabal"],
-        "call-stack": ["@stackage//:Cabal"],
-        "HUnit": ["@stackage//:Cabal"],
-        "quickcheck": ["@stackage//:Cabal"],
-        "hspec-expectations": ["@stackage//:Cabal"],
-        "quickcheck-io": ["@stackage//:Cabal"],
-        "tasty-discover": ["@stackage//:Cabal"],
-        "hspec-core": ["@stackage//:Cabal"],
-        "bifunctors": ["@stackage//:Cabal"],
-        "hspec": ["@stackage//:Cabal"],
-    },
     packages = [
-        "Cabal",
         "aeson",
         "hspec",
         "string-qq",
@@ -76,7 +62,7 @@ stack_snapshot(
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc922",
+    attribute_path = "haskell.compiler.ghc902",
     compiler_flags = [
         "-Werror",
         "-Wall",
@@ -85,7 +71,7 @@ haskell_register_ghc_nixpkgs(
         "-Wredundant-constraints",
     ],
     repository = "@nixpkgs",
-    version = "9.2.2",
+    version = "9.0.2",
 )
 
 ###############
