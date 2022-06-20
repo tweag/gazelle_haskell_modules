@@ -5,5 +5,3 @@ packages:
   commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
   subdirs:
   - Cabal
-- git: https://github.com/tweag/attoparsec
-  commit: 431508dcaa6d2471693d7f0cd40167334f1d0a8a

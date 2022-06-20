@@ -47,6 +47,13 @@ stack_snapshot(
             "lib",
             "exe:tasty-discover",
         ],
+        "attoparsec": [
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    },
+    components_dependencies = {
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
     },
     local_snapshot = "//:snapshot.yaml",
     packages = [
