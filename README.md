@@ -108,24 +108,12 @@ gazelle_binary(
 
 ### Using GHC version 9.0
 
-Gazelle_haskell_modules does not support the possibility to define private projects (yet).
+The current version of `stack_snapshot` requires a specific configuration step when a package relies on an internal private library.
 
-However, the `attoparsec` version on the stackage snapshots associated to the 9.0 versions of GHC uses this feature,
-hence to use this version of GHC, one has to manually edit the stackage snapshot to use the corrected version of `attoparsec`.
+This is the case of the `attoparsec` version on the stackage snapshots associated to the 9.0 versions of GHC.
+Hence to use this version of GHC, one has to manually edit the stackage snapshot to declare that this internal library exists and how to use it.
 
-Hence, one should declare a `snapshot.yaml` file:
-
-```yaml
-resolver: lts-19.11
-
-packages:
-- git: https://github.com/tweag/attoparsec
-  commit: 431508dcaa6d2471693d7f0cd40167334f1d0a8a
-```
-
-and then the `WORKSPACE` file should import this custom snapshot using:
-The simplest way to bring them is to use the
-`stack_snapshot` rule in the `WORKSPACE` file as follows.
+Hence, the `WORKSPACE` file should explicitly contain the setup steps for `attoparsec`:
 
 ```python
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
@@ -134,16 +122,26 @@ gazelle_haskell_modules_dependencies()
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "attoparsec": [
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    },
+    components_dependencies ={
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
     packages = [
         "aeson",
     ],
-    local_snapshot = "//:snapshot.yaml",
+    snapshot = "lts-19.11"
 )
+
 ```
 
 ### Using GHC version 9.2
 
-As for version 9.0, one has to use an alternative version of `attoparsec` for this version of GHC.
+As for version 9.0, one has to do explicitly specify the dependency to the internal library in `attoparsec`.
 
 Additionally, due to a regression in `cabal`, which badly handles relocatable build now,
 one has to use a patched version of `cabal`.
@@ -158,8 +156,6 @@ packages:
   commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
   subdirs:
   - Cabal
-- git: https://github.com/tweag/attoparsec
-  commit: 431508dcaa6d2471693d7f0cd40167334f1d0a8a
 ```
 
 However, it then requires to explicit depend on the patched version of cabal for every module requiring it,
@@ -172,6 +168,15 @@ gazelle_haskell_modules_dependencies()
 
 stack_snapshot(
     name = "stackage",
+    components = {
+        "attoparsec": [
+            "lib",
+            "lib:attoparsec-internal",
+        ],
+    },
+    components_dependencies ={
+        "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+    },
     setup_deps = {
         "transformers-compat": ["@stackage//:Cabal"],
         "hspec-discover": ["@stackage//:Cabal"],
