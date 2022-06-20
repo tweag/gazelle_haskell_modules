@@ -60,6 +60,9 @@ stripIndentation t =
 testSource :: Text -> Set ModuleImport -> Bool -> Bool -> Text -> IO ()
 testSource = testSourceWithFile "dummy.hs"
 
+stdImport :: Text -> ModuleImport
+stdImport = ModuleImport NormalImport Nothing
+
 testSourceWithFile :: FilePath -> Text -> Set ModuleImport -> Bool -> Bool -> Text -> IO ()
 testSourceWithFile file moduleName importedModules usesTH isBoot contents = do
     fmap NicelyPrinted (scanImports file $ stripIndentation contents)
@@ -73,7 +76,7 @@ testSourceWithFile file moduleName importedModules usesTH isBoot contents = do
 
 spec_scanImports :: Spec
 spec_scanImports = do
-    let m = ModuleImport NormalImport Nothing
+    let m = stdImport
     it "should accept empty files" $
       testSource "Main" [] False False ""
     it "should find an import" $

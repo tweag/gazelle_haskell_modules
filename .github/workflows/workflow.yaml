@@ -11,6 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+        ghc-version: ["ghc_8_10_7", "ghc_9_0_2", "ghc_9_2_2"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -39,14 +40,14 @@ jobs:
           ln -s ../.bazelrc.local example/.bazelrc.local
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
       - name: Build & test himportscan
-        run: nix-shell --pure --run 'bazel test //himportscan:tasty'
+        run: nix-shell --pure --run 'bazel test //himportscan:tasty --config=${{ matrix.ghc-version }}'
       - name: Build & run gazelle
-        run: cd example; nix-shell --pure --run 'bazel run //:gazelle'
+        run: cd example; nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}'
       - name: Build & run gazelle fix
-        run: cd example; nix-shell --pure --run 'bazel run //:gazelle -- fix'
+        run: cd example; nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }} -- fix'
       - name: Build & test generated rules
-        run: cd example; nix-shell --pure --run 'bazel test //...'
+        run: cd example; nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
       - name: Build & run gazelle with alternative dependencies
-        run: cd tests/alternative-deps; nix-shell --pure --run 'bazel run //:gazelle'
+        run: cd tests/alternative-deps; nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}'
       - name: Test for buildifier suggestions
         run: nix-shell --pure --run 'bazel run //:buildifier-diff'

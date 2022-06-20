@@ -8,6 +8,8 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE CPP #-}
 
 module HImportScan.ImportScanner
   ( ScannedImports(..)
@@ -18,7 +20,6 @@ module HImportScan.ImportScanner
   ) where
 
 import Data.ByteString.Internal(ByteString(PS))
-import Control.Exception (throwIO)
 import qualified Data.Aeson as Aeson
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
@@ -28,9 +29,15 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Data.Text.IO as Text
-import HImportScan.GHC as GHC
-import qualified HImportScan.GHC.Settings as GHC.Settings
 import System.Directory (doesFileExist)
+
+#if __GLASGOW_HASKELL__ >= 902
+import HImportScan.GHC9_2 as GHC
+#elif __GLASGOW_HASKELL__ == 900
+import HImportScan.GHC9_0 as GHC
+#else
+import HImportScan.GHC8_10 as GHC
+#endif
 
 -- | Holds the names of modules imported in a Haskell module.
 data ScannedImports = ScannedImports
@@ -56,7 +63,7 @@ data ImportMethod = SourceImport | NormalImport
   deriving (Eq, Ord)
 
 instance Aeson.ToJSON ScannedImports where
-  toJSON (ScannedImports filePath moduleName importedModules usesTH isBoot) =
+  toJSON ScannedImports{..} =
     Aeson.object $
       [ ("filePath", Aeson.String filePath)
       , ("moduleName", Aeson.String moduleName)
@@ -105,7 +112,7 @@ scanImports filePath contents = do
 
   -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
   -- ParserOpts, as getImports no longer depends on DynFlags then.
-  let dynFlagsWithExtensions = toggleDynFlags $ GHC.defaultDynFlags GHC.Settings.fakeSettings GHC.Settings.fakeLlvmConfig
+  let dynFlagsWithExtensions = toggleDynFlags $ GHC.defaultDynFlags GHC.fakeSettings GHC.fakeLlvmConfig
 
   let
     -- [GL] The fact that the resulting strings here contain the "-X"s makes me a bit doubtful that this is the right approach,
@@ -114,12 +121,10 @@ scanImports filePath contents = do
       any ((`elem` ["-XTemplateHaskell", "-XQuasiQuotes"]) . GHC.unLoc)
         (GHC.getOptions dynFlagsWithExtensions sb filePath)
     isBoot = ".hs-boot" `isSuffixOf` filePath
-  GHC.getImports dynFlagsWithExtensions sb filePath filePath >>= \case
+  GHC.imports dynFlagsWithExtensions sb filePath >>= \case
     -- It's important that we error in this case to signal to the user that
     -- something needs fixing in the source file.
-    Left err -> do
-      GHC.printBagOfErrors dynFlagsWithExtensions err
-      throwIO (GHC.mkSrcErr err)
+    Left err -> GHC.handleParseError dynFlagsWithExtensions err
     Right (sourceImports, normalImports, moduleName) -> do
       pure ScannedImports
             { filePath = Text.pack filePath
