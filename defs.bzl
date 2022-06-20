@@ -6,9 +6,9 @@ def _gazelle_haskell_modules_dependencies_impl(repository_ctx):
         content = '''
 package(default_visibility = ["//visibility:public"])
 
-alias(name="aeson", actual="{aeson}")
+alias(name="json", actual="{json}")
         '''.format(
-            aeson = repository_ctx.attr.aeson,
+            json = repository_ctx.attr.json,
         ),
         executable = False,
     )
@@ -17,7 +17,7 @@ _gazelle_haskell_modules_dependencies = repository_rule(
     implementation = _gazelle_haskell_modules_dependencies_impl,
     local = True,
     attrs = {
-        "aeson": attr.label(default = "@stackage//:aeson"),
+        "json": attr.label(default = "@stackage//:json"),
     },
 )
 
@@ -37,7 +37,7 @@ def gazelle_haskell_modules_dependencies(**kargs):
 
       # Dependencies overriden
       gazelle_haskell_modules_dependencies(
-          aeson = "@someother//:some-other-aeson",
+          json = "@someother//:some-other-json",
       )
 
       ```

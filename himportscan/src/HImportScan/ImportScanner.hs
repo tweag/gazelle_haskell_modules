@@ -20,7 +20,7 @@ module HImportScan.ImportScanner
   ) where
 
 import Data.ByteString.Internal(ByteString(PS))
-import qualified Data.Aeson as Aeson
+import qualified Text.JSON as Json
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
 import Data.Set (Set)
@@ -62,31 +62,40 @@ data ModuleImport = ModuleImport
 data ImportMethod = SourceImport | NormalImport
   deriving (Eq, Ord)
 
-instance Aeson.ToJSON ScannedImports where
-  toJSON ScannedImports{..} =
-    Aeson.object $
-      [ ("filePath", Aeson.String filePath)
-      , ("moduleName", Aeson.String moduleName)
-      , ("importedModules", Aeson.toJSON importedModules)
-      ] ++
-      [ ("usesTH", Aeson.toJSON True) | usesTH] ++
-      [ ("isBoot", Aeson.toJSON True) | isBoot]
+jsonText :: Text -> Json.JSValue
+jsonText = Json.JSString . Json.toJSString . Text.unpack
 
-instance Aeson.ToJSON ModuleImport where
-  toJSON (ModuleImport importMethod maybePackageName moduleName) =
-    Aeson.object $
+instance Json.JSON ScannedImports where
+  showJSON ScannedImports{..} = Json.JSObject $
+    Json.toJSObject $
+      [ ("filePath", jsonText filePath)
+      , ("moduleName", jsonText moduleName)
+      , ("importedModules", Json.showJSON importedModules)
+      ] ++
+      [ ("usesTH", Json.JSBool True) | usesTH] ++
+      [ ("isBoot", Json.JSBool True) | isBoot]
+
+  -- We are only exorting the result to JSON, hence the read function is undefined.
+  readJSON _ = undefined
+
+instance Json.JSON ModuleImport where
+  showJSON (ModuleImport importMethod maybePackageName moduleName) = Json.JSObject $
+    Json.toJSObject $
       -- Here we rely on the default value in Golang for booleans (false)
       -- to avoid storing a boolean in the JSON file whenever one is not doing a source import.
-      [("isSourceImported", Aeson.Bool True) | importMethod == SourceImport] ++
+      [("isSourceImported", Json.JSBool True) | importMethod == SourceImport] ++
       -- Here again, the default Golang value for string is "",
       -- hence we do not write this field in case it is not necessary.
       packageNameField ++
-      [ ("moduleName", Aeson.String moduleName) ]
+      [ ("moduleName", jsonText moduleName) ]
     where
       packageNameField =
         case maybePackageName of
           Nothing -> []
-          Just s -> [ ("packageName", Aeson.String s) ]
+          Just s -> [ ("packageName", jsonText s) ]
+
+  -- We are only exorting the result to JSON, hence the read function is undefined.
+  readJSON _ = undefined
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve

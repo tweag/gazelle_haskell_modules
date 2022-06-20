@@ -53,15 +53,6 @@ stack_snapshot(
                 "lib",
                 "exe:tasty-discover",
             ],
-        } if ghc_version == "8.10.7" else {
-            "tasty-discover": [
-                "lib",
-                "exe:tasty-discover",
-            ],
-            "attoparsec": [
-                "lib",
-                "lib:attoparsec-internal",
-            ],
         },
     components_dependencies =
         None if ghc_version == "8.10.7" else {
@@ -70,8 +61,8 @@ stack_snapshot(
     local_snapshot = "//:snapshot-" + ghc_version + ".yaml",
     packages = [
         "Cabal",
-        "aeson",
         "hspec",
+        "json",
         "string-qq",
         "tasty",
         "tasty-discover",

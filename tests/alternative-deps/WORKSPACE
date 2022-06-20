@@ -49,25 +49,14 @@ load("@config_settings//:info.bzl", "ghc_version")
 load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_dependencies")
 
 gazelle_haskell_modules_dependencies(
-    aeson = "@stackage-b//:aeson",
+    json = "@stackage-b//:json",
 )
 
 stack_snapshot(
     name = "stackage-b",
-    components =
-        None if ghc_version == "8.10.7" else {
-            "attoparsec": [
-                "lib",
-                "lib:attoparsec-internal",
-            ],
-        },
-    components_dependencies =
-        None if ghc_version == "8.10.7" else {
-            "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
-        },
     local_snapshot = "@io_tweag_gazelle_haskell_modules//:snapshot-" + ghc_version + ".yaml",
     packages = [
-        "aeson",
+        "json",
     ],
     setup_deps = {
         "transformers-compat": ["@stackage//:Cabal"],

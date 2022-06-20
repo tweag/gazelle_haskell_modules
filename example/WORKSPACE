@@ -58,26 +58,13 @@ stack_snapshot(
                 "lib",
                 "exe:tasty-discover",
             ],
-        } if ghc_version == "8.10.7" else {
-            "tasty-discover": [
-                "lib",
-                "exe:tasty-discover",
-            ],
-            "attoparsec": [
-                "lib",
-                "lib:attoparsec-internal",
-            ],
-        },
-    components_dependencies =
-        None if ghc_version == "8.10.7" else {
-            "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
         },
     local_snapshot = "@io_tweag_gazelle_haskell_modules//:snapshot-" + ghc_version + ".yaml",
     packages = [
         "Cabal",
-        "aeson",
         "base",
         "inspection-testing",
+        "json",
         "tasty",
         "tasty-discover",
         "tasty-hunit",
