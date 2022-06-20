@@ -111,9 +111,7 @@ gazelle_binary(
 The current version of `stack_snapshot` requires a specific configuration step when a package relies on an internal private library.
 
 This is the case of the `attoparsec` version on the stackage snapshots associated to the 9.0 versions of GHC.
-Hence to use this version of GHC, one has to manually edit the stackage snapshot to declare that this internal library exists and how to use it.
-
-Hence, the `WORKSPACE` file should explicitly contain the setup steps for `attoparsec`:
+Hence to use this version of GHC, one has to manually edit the `stack_snapshot` rule to declare that this internal library exists and how to use it.
 
 ```python
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
