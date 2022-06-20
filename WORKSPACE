@@ -48,6 +48,16 @@ stack_snapshot(
             "exe:tasty-discover",
         ],
     },
+    local_snapshot = "//:snapshot.yaml",
+    packages = [
+        "Cabal",
+        "aeson",
+        "hspec",
+        "string-qq",
+        "tasty",
+        "tasty-discover",
+        "tasty-hspec",
+    ],
     setup_deps = {
         "transformers-compat": ["@stackage//:Cabal"],
         "hspec-discover": ["@stackage//:Cabal"],
@@ -61,16 +71,6 @@ stack_snapshot(
         "bifunctors": ["@stackage//:Cabal"],
         "hspec": ["@stackage//:Cabal"],
     },
-    packages = [
-        "Cabal",
-        "aeson",
-        "hspec",
-        "string-qq",
-        "tasty",
-        "tasty-discover",
-        "tasty-hspec",
-    ],
-    local_snapshot = "//:snapshot.yaml",
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
