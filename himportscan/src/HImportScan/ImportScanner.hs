@@ -57,14 +57,11 @@ data ModuleImport = ModuleImport
 data ImportMethod = SourceImport | NormalImport
   deriving (Eq, Ord)
 
-jsonString :: String -> Json.JSValue
-jsonString = Json.JSString . Json.toJSString
-
 instance Json.JSON ScannedImports where
   showJSON ScannedImports{..} = Json.JSObject $
     Json.toJSObject $
-      [ ("filePath", jsonString filePath)
-      , ("moduleName", jsonString moduleName)
+      [ ("filePath", Json.showJSON filePath)
+      , ("moduleName", Json.showJSON moduleName)
       , ("importedModules", Json.showJSON importedModules)
       ] ++
       [ ("usesTH", Json.JSBool True) | usesTH] ++
@@ -81,12 +78,12 @@ instance Json.JSON ModuleImport where
       -- Here again, the default Golang value for string is "",
       -- hence we do not write this field in case it is not necessary.
       packageNameField ++
-      [ ("moduleName", jsonString moduleName) ]
+      [ ("moduleName", Json.showJSON moduleName) ]
     where
       packageNameField =
         case maybePackageName of
           Nothing -> []
-          Just s -> [ ("packageName", jsonString s) ]
+          Just s -> [ ("packageName", Json.showJSON s) ]
 
   readJSON _ = error "We are only exporting the result to JSON, hence the read function is undefined."
 
