@@ -70,7 +70,7 @@ instance Json.JSON ScannedImports where
       [ ("usesTH", Json.JSBool True) | usesTH] ++
       [ ("isBoot", Json.JSBool True) | isBoot]
 
-  readJSON _ = error "We are only exorting the result to JSON, hence the read function is undefined."
+  readJSON _ = error "We are only exporting the result to JSON, hence the read function is undefined."
 
 instance Json.JSON ModuleImport where
   showJSON (ModuleImport importMethod maybePackageName moduleName) = Json.JSObject $
@@ -88,7 +88,7 @@ instance Json.JSON ModuleImport where
           Nothing -> []
           Just s -> [ ("packageName", jsonString s) ]
 
-  readJSON _ = error "We are only exorting the result to JSON, hence the read function is undefined."
+  readJSON _ = error "We are only exporting the result to JSON, hence the read function is undefined."
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
