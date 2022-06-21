@@ -9,8 +9,6 @@ import Data.Char (isSpace)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.String.QQ (s)
-import Data.Text (Text)
-import qualified Data.Text as Text
 import HImportScan.ImportScanner (ModuleImport(..), ScannedImports(..), ImportMethod(..), scanImports)
 import Test.Hspec
 
@@ -21,21 +19,21 @@ newtype NicelyPrinted = NicelyPrinted ScannedImports
   deriving Eq
 
 instance Show NicelyPrinted where
-  show (NicelyPrinted si) = Text.unpack $ showScannedImports si
+  show (NicelyPrinted si) = showScannedImports si
 
-showScannedImports :: ScannedImports -> Text
-showScannedImports ScannedImports{..} = Text.unlines $ map ("    " <>) $
+showScannedImports :: ScannedImports -> String
+showScannedImports ScannedImports{..} = unlines $ map ("    " <>) $
     [ ""
     , filePath
     , moduleName
     ] ++
     map (("  " <>) . showImport) (Set.toList importedModules) ++
-    [ "usesTH = " <> Text.pack (show usesTH)
-    , "isBoot = " <> Text.pack (show isBoot)
+    [ "usesTH = " <> show usesTH
+    , "isBoot = " <> show isBoot
     ]
   where
     showImport (ModuleImport importMethod (Just pkg) x) =
-      Text.pack (show pkg) <> " " <> x <> showImportMethodExtension importMethod
+      show pkg <> " " <> x <> showImportMethodExtension importMethod
     showImport (ModuleImport importMethod Nothing x) =
       x <> showImportMethodExtension importMethod
 
@@ -47,27 +45,27 @@ showScannedImports ScannedImports{..} = Text.unlines $ map ("    " <>) $
 -- > stripIndentation " a\n  b\n c" == "a\n b\nc"
 -- > stripIndentation "a\n  b\n c" == "a\n  b\n c"
 --
-stripIndentation :: Text -> Text
+stripIndentation :: String -> String
 stripIndentation t =
-    let textLines = Text.lines t
+    let textLines = lines t
         minIndentation = minimum $ map indentation $ "" : textLines
-     in Text.unlines $ map (Text.drop minIndentation) textLines
+     in unlines $ map (drop minIndentation) textLines
   where
     indentation line =
-      let (spaces, rest) = Text.span isSpace line
-       in if Text.length rest == 0 then maxBound else Text.length spaces
+      let (spaces, rest) = span isSpace line
+       in if null rest then maxBound else length spaces
 
-testSource :: Text -> Set ModuleImport -> Bool -> Bool -> Text -> IO ()
+testSource :: String -> Set ModuleImport -> Bool -> Bool -> String -> IO ()
 testSource = testSourceWithFile "dummy.hs"
 
-stdImport :: Text -> ModuleImport
+stdImport :: String -> ModuleImport
 stdImport = ModuleImport NormalImport Nothing
 
-testSourceWithFile :: FilePath -> Text -> Set ModuleImport -> Bool -> Bool -> Text -> IO ()
+testSourceWithFile :: FilePath -> String -> Set ModuleImport -> Bool -> Bool -> String -> IO ()
 testSourceWithFile file moduleName importedModules usesTH isBoot contents = do
     fmap NicelyPrinted (scanImports file $ stripIndentation contents)
       `shouldReturn` NicelyPrinted ScannedImports
-        { filePath = Text.pack file
+        { filePath = file
         , moduleName
         , importedModules
         , usesTH

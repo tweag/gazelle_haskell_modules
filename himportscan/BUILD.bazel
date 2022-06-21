@@ -39,7 +39,7 @@ haskell_library(
         ":ghc",
         ":ghc-boot",
         ":text",
-        "@io_tweag_gazelle_haskell_modules_deps//:aeson",
+        "@io_tweag_gazelle_haskell_modules_deps//:json",
     ],
 )
 
@@ -57,7 +57,7 @@ haskell_binary(
         ":ghc",
         ":himportscan-library",
         ":text",
-        "@io_tweag_gazelle_haskell_modules_deps//:aeson",
+        "@io_tweag_gazelle_haskell_modules_deps//:json",
     ],
 )
 

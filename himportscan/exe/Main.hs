@@ -2,8 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy
+import qualified Text.JSON as Json
 import Data.Maybe (catMaybes)
 import HImportScan.ImportScanner (ScannedImports, scanImportsFromFile)
 
@@ -15,4 +14,4 @@ main = do
   printImports . catMaybes =<< mapM scanImportsFromFile haskellSrcs
 
 printImports :: [ScannedImports] -> IO ()
-printImports = ByteString.Lazy.putStrLn . Aeson.encode
+printImports = putStrLn . Json.encode

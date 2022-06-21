@@ -11,7 +11,7 @@ import Control.Exception (throwIO)
 import DynFlags as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import EnumSet as X (empty, fromList)
 import ErrUtils as X (printBagOfErrors, ErrMsg)
-import FastString as X (FastString, mkFastString, bytesFS)
+import FastString as X (FastString, mkFastString, unpackFS)
 import GHC as X (runGhc, getSessionDynFlags)
 import GHC.LanguageExtensions as X
   (Extension
