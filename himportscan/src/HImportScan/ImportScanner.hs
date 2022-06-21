@@ -19,16 +19,11 @@ module HImportScan.ImportScanner
   , scanImportsFromFile
   ) where
 
-import Data.ByteString.Internal(ByteString(PS))
 import qualified Text.JSON as Json
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Text.Encoding as Text
-import qualified Data.Text.IO as Text
 import System.Directory (doesFileExist)
 
 #if __GLASGOW_HASKELL__ >= 902
@@ -41,8 +36,8 @@ import HImportScan.GHC8_10 as GHC
 
 -- | Holds the names of modules imported in a Haskell module.
 data ScannedImports = ScannedImports
-  { filePath :: Text  -- ^ Path of the Haskell module
-  , moduleName :: Text  -- ^ The module name
+  { filePath :: String  -- ^ Path of the Haskell module
+  , moduleName :: String  -- ^ The module name
   , importedModules :: Set ModuleImport -- ^ The modules imported in this module
   , usesTH :: Bool  -- ^ Whether the module needs TH or the interpreter
   , isBoot :: Bool -- ^ Whether the module is a boot module
@@ -54,29 +49,28 @@ data ScannedImports = ScannedImports
 -- It also stores if the import was a normal or a source import.
 data ModuleImport = ModuleImport
   { isSourceImported :: ImportMethod
-  , packageName :: Maybe Text
-  , moduleName :: Text
+  , packageName :: Maybe String
+  , moduleName :: String
   }
   deriving (Eq, Ord)
 
 data ImportMethod = SourceImport | NormalImport
   deriving (Eq, Ord)
 
-jsonText :: Text -> Json.JSValue
-jsonText = Json.JSString . Json.toJSString . Text.unpack
+jsonString :: String -> Json.JSValue
+jsonString = Json.JSString . Json.toJSString
 
 instance Json.JSON ScannedImports where
   showJSON ScannedImports{..} = Json.JSObject $
     Json.toJSObject $
-      [ ("filePath", jsonText filePath)
-      , ("moduleName", jsonText moduleName)
+      [ ("filePath", jsonString filePath)
+      , ("moduleName", jsonString moduleName)
       , ("importedModules", Json.showJSON importedModules)
       ] ++
       [ ("usesTH", Json.JSBool True) | usesTH] ++
       [ ("isBoot", Json.JSBool True) | isBoot]
 
-  -- We are only exorting the result to JSON, hence the read function is undefined.
-  readJSON _ = undefined
+  readJSON _ = error "We are only exorting the result to JSON, hence the read function is undefined."
 
 instance Json.JSON ModuleImport where
   showJSON (ModuleImport importMethod maybePackageName moduleName) = Json.JSObject $
@@ -87,15 +81,14 @@ instance Json.JSON ModuleImport where
       -- Here again, the default Golang value for string is "",
       -- hence we do not write this field in case it is not necessary.
       packageNameField ++
-      [ ("moduleName", jsonText moduleName) ]
+      [ ("moduleName", jsonString moduleName) ]
     where
       packageNameField =
         case maybePackageName of
           Nothing -> []
-          Just s -> [ ("packageName", jsonText s) ]
+          Just s -> [ ("packageName", jsonString s) ]
 
-  -- We are only exorting the result to JSON, hence the read function is undefined.
-  readJSON _ = undefined
+  readJSON _ = error "We are only exorting the result to JSON, hence the read function is undefined."
 
 -- | Retrieves the names of modules imported in the given
 -- source file. Runs the GHC lexer only as far as necessary to retrieve
@@ -107,17 +100,16 @@ scanImportsFromFile :: FilePath -> IO (Maybe ScannedImports)
 scanImportsFromFile filePath = do
   fileExists <- doesFileExist filePath
   if fileExists
-  then fmap Just . scanImports filePath =<< Text.readFile filePath
+  then fmap Just . scanImports filePath =<< readFile filePath
   else pure Nothing
 
 -- TODO[GL]: This function is only in IO because
 -- * we use printBagOfErrors to report an error, but we can easily factor that out
 -- * getImports is in IO, which in turn is only in IO to throw an error
 --   Perhaps we could raise an issue at ghc to make a pure variant.
-scanImports :: FilePath -> Text -> IO ScannedImports
+scanImports :: FilePath -> String -> IO ScannedImports
 scanImports filePath contents = do
-  let sb = case Text.encodeUtf8 $ preprocessContents contents of
-        PS ptr offset len -> StringBuffer ptr len offset
+  let sb = GHC.stringToStringBuffer $ preprocessContents contents
 
   -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
   -- ParserOpts, as getImports no longer depends on DynFlags then.
@@ -136,24 +128,24 @@ scanImports filePath contents = do
     Left err -> GHC.handleParseError dynFlagsWithExtensions err
     Right (sourceImports, normalImports, moduleName) -> do
       pure ScannedImports
-            { filePath = Text.pack filePath
-            , moduleName = moduleNameToText moduleName
+            { filePath = filePath
+            , moduleName = moduleNameToString moduleName
             , importedModules =
                 let
                   toModuleImport :: (ImportMethod, (Maybe GHC.FastString, GHC.Located GHC.ModuleName)) -> ModuleImport
                   toModuleImport (importMethod, (mfs, locatedModuleName)) =
                     ModuleImport
                       importMethod
-                      (fmap (Text.decodeUtf8 . GHC.bytesFS) mfs)
-                      (moduleNameToText locatedModuleName)
+                      (fmap GHC.unpackFS mfs)
+                      (moduleNameToString locatedModuleName)
                  in Set.fromList $ map toModuleImport $ map (SourceImport,) sourceImports ++ map (NormalImport,) normalImports
             , usesTH
             , isBoot
             }
   where
-    preprocessContents = Text.unlines . flipBirdTracks filePath . clearCPPDirectives . Text.lines
+    preprocessContents = unlines . flipBirdTracks filePath . clearCPPDirectives . lines
 
-    moduleNameToText = Text.pack . GHC.moduleNameString . GHC.unLoc
+    moduleNameToString = GHC.moduleNameString . GHC.unLoc
 
 -- Toggle extensions to the state we want them in.
 -- We should handle all forms of imports.
@@ -177,9 +169,9 @@ toggleDynFlags dflags0 =
 --
 -- Honours multiline directives (\-terminated) too
 --
-clearCPPDirectives :: [Text] -> [Text]
+clearCPPDirectives :: [String] -> [String]
 clearCPPDirectives = \case
-  xs@(t : _) | Text.isPrefixOf "#" t ->
+  xs@(('#':_) : _) ->
     let (nlines, rest) = dropDirectiveLines xs
      in replicate nlines "" ++ clearCPPDirectives rest
   (xs : xss) -> xs : clearCPPDirectives xss
@@ -189,16 +181,16 @@ clearCPPDirectives = \case
       let (directive, rest) = span endsWithBackslash xs
        in (length directive + 1, drop 1 rest)
 
-    endsWithBackslash = Text.isSuffixOf "\\"
+    endsWithBackslash = isSuffixOf "\\"
 
 -- | The start of bird tracks are replaced with spaces, and the
 -- comment lines are replaced with empty lines as long as the given
 -- file has .lhs extension.
-flipBirdTracks :: FilePath -> [Text] -> [Text]
+flipBirdTracks :: FilePath -> [String] -> [String]
 flipBirdTracks f =
     if isSuffixOf ".lhs" (map toLower f) then map flipBirdTrack
       else id
   where
-    flipBirdTrack :: Text -> Text
-    flipBirdTrack xs | Text.isPrefixOf ">" xs = " " <> Text.drop 1 xs
+    flipBirdTrack :: String -> String
+    flipBirdTrack ('>' : xs) = " " <> xs
     flipBirdTrack _ = " "

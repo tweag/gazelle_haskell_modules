@@ -10,7 +10,7 @@ import HImportScan.GHC.FakeSettings9_2 as X
 import GHC.Driver.Session as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import GHC.Data.EnumSet as X (empty, fromList)
 import GHC.Driver.Errors as X (printBagOfErrors)
-import GHC.Data.FastString as X (FastString, mkFastString, bytesFS)
+import GHC.Data.FastString as X (FastString, mkFastString, unpackFS)
 import GHC as X (runGhc, getSessionDynFlags)
 import GHC.LanguageExtensions as X
   (Extension

@@ -11,7 +11,7 @@ import Control.Exception (throwIO)
 import GHC.Driver.Session as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import GHC.Data.EnumSet as X (empty, fromList)
 import GHC.Utils.Error as X (printBagOfErrors, ErrMsg)
-import GHC.Data.FastString as X (FastString, mkFastString, bytesFS)
+import GHC.Data.FastString as X (FastString, mkFastString, unpackFS)
 import GHC as X (runGhc, getSessionDynFlags)
 import GHC.LanguageExtensions as X
   (Extension

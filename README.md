@@ -75,10 +75,10 @@ gazelle_haskell_modules_dependencies()
 stack_snapshot(
     name = "stackage",
     packages = [
-        "aeson",
+        "hspec",
     ],
     # Most snapshots of your choice might do
-    snapshot = "lts-18.1",
+    snapshot = "lts-18.28",
 )
 ```
 Should Haskell packages need to be grabbed from elsewhere, alternative
@@ -148,7 +148,7 @@ stack_snapshot(
     },
     packages = [
         "Cabal",
-        "aeson",
+        "hspec",
     ],
     local_snapshot = "//:snapshot.yaml",
 )
