@@ -140,6 +140,26 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
 gazelle_dependencies()
 
+####################
+# Gazelle Cabal
+####################
+
+# QUESTION: When the pull request adding the 2 missing library functions in gazelle_cabal is merged,
+# should we refer to an explicit commit of gazelle_cabal or to `main`?
+
+http_archive(
+    name = "io_tweag_gazelle_cabal",
+    sha256 = "853acd38dc69284c915c0d30fe6e051593bf4e7f900e6be13ef306fc7ffa74c0",
+    strip_prefix = "gazelle_cabal-240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2",
+    urls = [
+        "https://github.com/tweag/gazelle_cabal/archive/240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2.zip",
+    ],
+)
+
+load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
+
+gazelle_cabal_dependencies()
+
 #######################
 # Buildifier preamble
 #######################
