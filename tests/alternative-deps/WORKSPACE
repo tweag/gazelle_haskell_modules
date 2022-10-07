@@ -86,6 +86,7 @@ stack_snapshot(
         "Cabal",
         "base",
         "inspection-testing",
+        "json",
         "tasty",
         "tasty-discover",
         "tasty-hunit",
