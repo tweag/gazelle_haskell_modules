@@ -225,7 +225,6 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 }
 
 func addNonHaskellModuleRules(
-	c *Config,
 	pkgRoot string,
 	repo string,
 	pkg string,
@@ -239,38 +238,52 @@ func addNonHaskellModuleRules(
 			continue
 		}
 		if isNonHaskellModule(r.Kind()) {
-			newr := rule.NewRule(r.Kind(), r.Name())
-			for _, k := range r.AttrKeys() {
-				if k != "srcs" && k != "modules" && k != "deps" && k != "narrowed_deps" && k != "main_file" {
-					newr.SetAttr(k, r.Attr(k))
-				}
-			}
+			newr, importData := addOneNonHaskellModuleRule(pkgRoot, repo, pkg, r)
 
-			srcs, err := getSrcs(pkgRoot, r)
-			handleRuleError(err, r, "srcs")
-			modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
-			handleRuleError(err, r, "modules")
-			deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
-			handleRuleError(err, r, "deps")
-			narrowedDeps, err := depsFromRule(r.Attr("narrowed_deps"), repo, pkg)
-			handleRuleError(err, r, "narrowed_deps")
-			appendLabelMaps(deps, narrowedDeps)
-			imports = append(imports, &HRuleImportData{
-				Deps:    deps,
-				Modules: modules,
-				Srcs:    srcs,
-			})
+			imports = append(imports, importData)
 			haskellRules = append(haskellRules, newr)
-
-			r.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
-			newr.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
-			newr.SetPrivateAttr(PRIVATE_ATTR_MODULE_LABELS, r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS))
 		}
 	}
 	return language.GenerateResult{
 		Gen:     append(gen.Gen, haskellRules...),
 		Imports: append(gen.Imports, imports...),
 	}
+}
+
+func addOneNonHaskellModuleRule(
+	pkgRoot string,
+	repo string,
+	pkg string,
+	r *rule.Rule,
+) (*rule.Rule, *HRuleImportData) {
+	newr := rule.NewRule(r.Kind(), r.Name())
+	for _, k := range r.AttrKeys() {
+		if k != "srcs" && k != "modules" && k != "deps" && k != "narrowed_deps" && k != "main_file" {
+			newr.SetAttr(k, r.Attr(k))
+		}
+	}
+
+	srcs, err := getSrcs(pkgRoot, r)
+	handleRuleError(err, r, "srcs")
+	modules, err := depsFromRule(r.Attr("modules"), repo, pkg)
+	handleRuleError(err, r, "modules")
+	deps, err := depsFromRule(r.Attr("deps"), repo, pkg)
+	handleRuleError(err, r, "deps")
+	narrowedDeps, err := depsFromRule(r.Attr("narrowed_deps"), repo, pkg)
+	handleRuleError(err, r, "narrowed_deps")
+	appendLabelMaps(deps, narrowedDeps)
+
+	r.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
+	newr.SetPrivateAttr(PRIVATE_ATTR_DEP_LABELS, deps)
+	newr.SetPrivateAttr(PRIVATE_ATTR_MODULE_LABELS, r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS))
+
+	importData := &HRuleImportData{
+		Deps:    deps,
+		Modules: modules,
+		Srcs:    srcs,
+	}
+
+	return newr, importData
 }
 
 func appendLabelMaps(a map[label.Label]bool, b map[label.Label]bool) {

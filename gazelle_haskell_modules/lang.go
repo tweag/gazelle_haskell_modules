@@ -179,51 +179,14 @@ func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleInde
 		// We fully generate the rule that gazele_cabal would have produced.
 		gazelle_cabal.RunResolve(c, ix, rc, r, expr, from)
 		// We then create an HRuleImportData from the generated rule.
-		newImports := mkHRuleImportDataFromGazelleCabalResult(c.RepoRoot, r)
-		setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, r, &newImports, from)
+		newr, newImports := addOneNonHaskellModuleRule(c.RepoRoot, from.Repo, from.Pkg, r)
+		setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, newr, newImports, from)
 	default:
 		if isNonHaskellModule(r.Kind()) {
 			setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
 		} else {
 			setHaskellModuleDeps(ix, r, imports.(*HModuleImportData), from)
 		}
-	}
-}
-
-func mkHRuleImportDataFromGazelleCabalResult(repoRoot string, r *rule.Rule) HRuleImportData {
-	// From the srcs attribute of r,
-	// we generate the Srcs field of the HRuleImportData.
-	var srcs []string
-	oldSrcs := r.Attr("srcs")
-	if oldSrcs != nil {
-		srcsList := gazelle_cabal.ListOfStringExpr(oldSrcs)
-		for _, x := range srcsList {
-			srcs = append(srcs, repoRoot+"/"+x)
-		}
-		// Now that they are stored in the HRuleImportData,
-		// gazelle_haskell_modules will take care of them,
-		// so we can suppress the attribute srcs from r.
-		r.DelAttr("srcs")
-	}
-	// Same thing for the Deps field.
-	deps := map[label.Label]bool{}
-	oldDeps := r.Attr("deps")
-	if oldDeps != nil {
-		depsList := gazelle_cabal.ListOfStringExpr(oldDeps)
-		for _, x := range depsList {
-			depLbl, _ := label.Parse(x)
-			deps[depLbl] = true
-		}
-		r.DelAttr("deps")
-	}
-	return HRuleImportData{
-		Deps: deps,
-		// When a rule comes from a gazelle_cabal run,
-		// it does not contain any relevant information in the field modules
-		// (this field is either non-existent or filled with data from an outdated run),
-		// hence we can safely put an empty map here.
-		Modules: make(map[label.Label]bool),
-		Srcs:    srcs,
 	}
 }
 
@@ -244,8 +207,7 @@ func (*gazelleHaskellModulesLang) GenerateRules(args language.GenerateArgs) lang
 
 	setVisibilities(args.File, generateResult.Gen)
 
-	c := args.Config.Exts[gazelleHaskellModulesName].(Config)
-	return addNonHaskellModuleRules(&c, args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
+	return addNonHaskellModuleRules(args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
 }
 
 func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
