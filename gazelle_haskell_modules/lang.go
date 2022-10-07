@@ -180,7 +180,14 @@ func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleInde
 		gazelle_cabal.RunResolve(c, ix, rc, r, expr, from)
 		// We then create an HRuleImportData from the generated rule.
 		newr, newImports := addOneNonHaskellModuleRule(c.RepoRoot, from.Repo, from.Pkg, r)
-		setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, newr, newImports, from)
+		// The new version of the rule is used to clean the attributes of r.
+		for _, a := range r.AttrKeys() {
+			if newr.Attr(a) == nil {
+				r.DelAttr(a)
+			}
+		}
+		// After this cleaning, the new deps are set.
+		setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, r, newImports, from)
 	default:
 		if isNonHaskellModule(r.Kind()) {
 			setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)

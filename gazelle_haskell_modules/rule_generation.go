@@ -225,11 +225,11 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 }
 
 func addNonHaskellModuleRules(
-	pkgRoot string,
-	repo string,
-	pkg string,
-	gen language.GenerateResult,
-	rules []*rule.Rule,
+	pkgRoot string, // root of the project tree
+	repo string, // name of the Bazel repo
+	pkg string, // package path inside project tree
+	gen language.GenerateResult, // container to which new generated rules are added
+	rules []*rule.Rule, // rules already present in the BUILD file
 ) language.GenerateResult {
 	haskellRules := make([]*rule.Rule, 0, len(rules))
 	imports := make([]interface{}, 0, len(rules))
