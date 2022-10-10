@@ -144,9 +144,6 @@ gazelle_dependencies()
 # Gazelle Cabal
 ####################
 
-# QUESTION: When the pull request adding the 2 missing library functions in gazelle_cabal is merged,
-# should we refer to an explicit commit of gazelle_cabal or to `main`?
-
 http_archive(
     name = "io_tweag_gazelle_cabal",
     sha256 = "853acd38dc69284c915c0d30fe6e051593bf4e7f900e6be13ef306fc7ffa74c0",

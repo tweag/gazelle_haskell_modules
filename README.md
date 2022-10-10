@@ -53,14 +53,36 @@ This [example project][example] shows it in action.
 ## Configuration
 
 Firstly, setup [gazelle][gazelle] and [rules_haskell][rules_haskell].
-Then import `gazelle_haskell_modules`.
+Then import `gazelle_cabal` and `gazelle_haskell_modules`.
 
 ```python
+####################
+# Gazelle_cabal
+####################
+
+http_archive(
+    name = "io_tweag_gazelle_cabal",
+    strip_prefix = "gazelle_cabal-240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2",
+    urls = ["https://github.com/tweag/gazelle_cabal/archive/240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2.zip"],
+)
+
+load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
+
+gazelle_cabal_dependencies()
+
+####################
+# Gazelle_haskell_modules
+####################
+
 http_archive(
     name = "io_tweag_gazelle_haskell_modules",
-    strip_prefix = "gazelle_haskell_modules-main",
-    url = "https://github.com/tweag/gazelle_haskell_modules/archive/main.zip",
+    strip_prefix = "gazelle_haskell_modules-a94dfc9591029aa35a7a62519735d0fe04b0e4fa",
+    urls = ["https://github.com/tweag/gazelle_haskell_modules/archive/a94dfc9591029aa35a7a62519735d0fe04b0e4fa.zip"],
 )
+
+load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_dependencies")
+
+gazelle_haskell_modules_dependencies()
 ```
 
 Additionally, some Haskell packages are needed to build
@@ -69,13 +91,11 @@ Additionally, some Haskell packages are needed to build
 
 ```python
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
-load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_dependencies")
-gazelle_haskell_modules_dependencies()
 
 stack_snapshot(
     name = "stackage",
     packages = [
-        "hspec",
+        "json", #keep
     ],
     # Most snapshots of your choice might do
     snapshot = "lts-18.28",
@@ -105,6 +125,31 @@ gazelle_binary(
     languages = DEFAULT_LANGUAGES + ["@io_tweag_gazelle_haskell_modules//gazelle_haskell_modules"],
 )
 ```
+
+### Combining `gazelle_cabal` and `gazelle_haskell_modules`
+
+One can run both extensions in one invocation,
+to both update the binary/library/tests rules depending of the changes made to your cabal files,
+and generate/update the associated `haskell_module` rules.
+
+To do so, one simply has to declare the `gazelle_binary` as
+
+```python
+gazelle_binary(
+    name = "gazelle_binary",
+    name = "gazelle_binary",
+    languages = DEFAULT_LANGUAGES + [
+        "@io_tweag_gazelle_cabal//gazelle_cabal",
+        "@io_tweag_gazelle_haskell_modules//gazelle_haskell_modules",
+    ],
+)
+```
+
+Please note that the order of the language extension is relevant here.
+One must first grab the updates from the cabal files using `gazelle_cabal`
+and then create/update the associated `haskell_module` rules.
+If the order of the extensions is wrong,
+the creation/updating of `haskell_modules` will be based on an outdated version of the library/binary/test rules.
 
 ### Using GHC version 9.2
 
