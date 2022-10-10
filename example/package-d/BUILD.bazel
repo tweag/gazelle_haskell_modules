@@ -1,4 +1,3 @@
-load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 
 haskell_library(
