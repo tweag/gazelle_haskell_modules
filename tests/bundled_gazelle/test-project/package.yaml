@@ -1,0 +1,21 @@
+name: bundled-gazelle-test
+
+dependencies:
+  - base
+  - transformers
+
+library:
+  source-dirs: src
+  other-modules: []
+
+
+tests:
+  spec:
+    main: Main.hs
+    source-dirs:
+      - tests/
+    dependencies:
+      - bundled-gazelle-test
+      - tasty
+      - tasty-hunit
+    other-modules: []

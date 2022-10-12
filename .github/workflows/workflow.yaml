@@ -49,5 +49,11 @@ jobs:
         run: cd example; nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
       - name: Build & run gazelle with alternative dependencies
         run: cd tests/alternative-deps; nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}'
+      - name: Build & run gazelle_cabal and gazelle_haskell_modules in the same invocation
+        run: |
+          cd tests/bundled_gazelle
+          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}'
+          nix-shell --pure --run 'bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}'
+          nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
       - name: Test for buildifier suggestions
         run: nix-shell --pure --run 'bazel run //:buildifier-diff'
