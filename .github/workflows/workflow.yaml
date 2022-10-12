@@ -39,6 +39,7 @@ jobs:
           EOF
           ln -s ../.bazelrc.local example/.bazelrc.local
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
+          ln -s ../../.bazelrc.local tests/bundled_gazelle/.bazelrc.local
       - name: Build & test himportscan
         run: nix-shell --pure --run 'bazel test //himportscan:tasty --config=${{ matrix.ghc-version }}'
       - name: Build & run gazelle
