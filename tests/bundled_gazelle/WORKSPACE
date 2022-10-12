@@ -17,10 +17,45 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+#################
+# Nixpkgs Setup
+#################
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "nixpkgs_local_repository",
+    "nixpkgs_python_configure",
+)
+
+nixpkgs_local_repository(
+    name = "nixpkgs",
+    nix_file = "//:nixpkgs.nix",
+)
+
+nixpkgs_python_configure(repository = "@nixpkgs")
+
+###########################
+# Gazelle_haskell_modules
+###########################
+
+local_repository(
+    name = "io_tweag_gazelle_haskell_modules",
+    path = "../..",
+)
+
+load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_dependencies")
+
+gazelle_haskell_modules_dependencies()
+
 ######################################
 # Haskell dependencies and toolchain
 ######################################
 
+load("@io_tweag_gazelle_haskell_modules//:config_settings/setup.bzl", "config_settings")
+
+config_settings(name = "config_settings")
+
+load("@config_settings//:info.bzl", "ghc_version")
 load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
@@ -28,14 +63,23 @@ stack_snapshot(
     packages = [
         "json",  #keep
     ],
-    snapshot = "lts-18.28",
+    local_snapshot = "@io_tweag_gazelle_haskell_modules//:snapshot-" + ghc_version + ".yaml",
 )
 
-load("@rules_haskell//haskell:toolchain.bzl", "rules_haskell_toolchains")
+load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
-rules_haskell_toolchains(
-    locale = "en_US.UTF-8",
-    version = "8.10.7",
+haskell_register_ghc_nixpkgs(
+    attribute_path =
+        "haskell.compiler.ghc" + ghc_version.replace(".", ""),
+    compiler_flags = [
+        "-Werror",
+        "-Wall",
+        "-Wcompat",
+        "-Wincomplete-record-updates",
+        "-Wredundant-constraints",
+    ],
+    repository = "@nixpkgs",
+    version = ghc_version,
 )
 
 ###############
@@ -51,11 +95,16 @@ http_archive(
     ],
 )
 
-load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
+    "nixpkgs_go_configure",
+)
+
+nixpkgs_go_configure(repository = "@nixpkgs")
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies")
 
 go_rules_dependencies()
-
-go_register_toolchains(version = "1.18.3")
 
 ####################
 # Gazelle preamble
@@ -95,16 +144,3 @@ http_archive(
 load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
 
 gazelle_cabal_dependencies()
-
-###########################
-# Gazelle_haskell_modules
-###########################
-
-local_repository(
-    name = "io_tweag_gazelle_haskell_modules",
-    path = "../..",
-)
-
-load("@io_tweag_gazelle_haskell_modules//:defs.bzl", "gazelle_haskell_modules_dependencies")
-
-gazelle_haskell_modules_dependencies()
