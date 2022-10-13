@@ -60,10 +60,10 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 
 stack_snapshot(
     name = "stackage",
+    local_snapshot = "@io_tweag_gazelle_haskell_modules//:snapshot-" + ghc_version + ".yaml",
     packages = [
         "json",  #keep
     ],
-    local_snapshot = "@io_tweag_gazelle_haskell_modules//:snapshot-" + ghc_version + ".yaml",
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
@@ -137,8 +137,9 @@ go_repository(
 
 http_archive(
     name = "io_tweag_gazelle_cabal",
-    strip_prefix = "gazelle_cabal-240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2",
-    urls = ["https://github.com/tweag/gazelle_cabal/archive/240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2.zip"],
+    sha256 = "9a85c591a06a9d8a18d14dbbc2743eba72883d0424f56cdcd25a60cecdd9903c",
+    strip_prefix = "gazelle_cabal-76b2e64dfcfdbbf480b4364d9526f68f62933740",
+    urls = ["https://github.com/tweag/gazelle_cabal/archive/76b2e64dfcfdbbf480b4364d9526f68f62933740.zip"],
 )
 
 load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
