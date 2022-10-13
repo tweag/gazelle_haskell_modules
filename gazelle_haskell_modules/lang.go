@@ -159,7 +159,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		if usesModules > 0 {
 			moduleSpecs[len(moduleSpecs)-1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
 		}
-		return moduleSpecs
+		return append(moduleSpecs, gazelle_cabal.RunImports(r, gazelleHaskellModulesName)...)
 	} else {
 		return []resolve.ImportSpec{}
 	}
@@ -173,7 +173,7 @@ func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleInde
 	// This happens only when one run gazelle_cabal and gazelle_haskell_modules in one pass as the the gazelle_binary.
 	case gazelle_cabal.ImportData:
 		// We fully generate the rule that gazele_cabal would have produced.
-		gazelle_cabal.RunResolve(c, ix, rc, r, expr, from)
+		gazelle_cabal.RunResolve(c, ix, r, expr, from, gazelleHaskellModulesName)
 		// We then create an HRuleImportData from the generated rule.
 		pkgRoot := path.Join(c.RepoRoot, from.Pkg)
 		newr, newImports := addOneNonHaskellModuleRule(pkgRoot, from.Repo, from.Pkg, r)

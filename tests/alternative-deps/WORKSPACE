@@ -170,10 +170,10 @@ gazelle_dependencies()
 
 http_archive(
     name = "io_tweag_gazelle_cabal",
-    sha256 = "853acd38dc69284c915c0d30fe6e051593bf4e7f900e6be13ef306fc7ffa74c0",
-    strip_prefix = "gazelle_cabal-240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2",
+    sha256 = "9a85c591a06a9d8a18d14dbbc2743eba72883d0424f56cdcd25a60cecdd9903c",
+    strip_prefix = "gazelle_cabal-76b2e64dfcfdbbf480b4364d9526f68f62933740",
     urls = [
-        "https://github.com/tweag/gazelle_cabal/archive/240ad1af8d0d0ca5c3fd3ff7afcdb2f0fe0dbbe2.zip",
+        "https://github.com/tweag/gazelle_cabal/archive/76b2e64dfcfdbbf480b4364d9526f68f62933740.zip",
     ],
 )
 

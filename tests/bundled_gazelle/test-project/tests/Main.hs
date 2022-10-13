@@ -5,6 +5,7 @@ import Test.Tasty.HUnit
 import Fibo
 import Power
 
+main :: IO ()
 main = defaultMain dummyTests
 
 dummyTests :: TestTree
