@@ -62,8 +62,13 @@ stack_snapshot(
     name = "stackage",
     local_snapshot = "@io_tweag_gazelle_haskell_modules//:snapshot-" + ghc_version + ".yaml",
     packages = [
+        "Cabal", #keep
         "json",  #keep
     ],
+    setup_deps = {
+        "call-stack": ["@stackage//:Cabal"],
+        "transformers-compat": ["@stackage//:Cabal"],
+    },
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
