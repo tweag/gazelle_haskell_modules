@@ -244,6 +244,7 @@ func addNonHaskellModuleRules(
 			haskellRules = append(haskellRules, newr)
 		}
 	}
+
 	return language.GenerateResult{
 		Gen:     append(gen.Gen, haskellRules...),
 		Imports: append(gen.Imports, imports...),

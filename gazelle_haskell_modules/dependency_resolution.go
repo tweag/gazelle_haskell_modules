@@ -309,6 +309,15 @@ func moduleByFilepathSpec(pkg string, componentName string, relativeModuleFilePa
 	}
 }
 
+func contains(l []label.Label, x label.Label) bool {
+	for _, a := range l {
+		if a == x {
+			return true
+		}
+	}
+	return false
+}
+
 func isDepOfAnyLibrary(ix *resolve.RuleIndex, depLabels []label.Label, libs []label.Label) (*label.Label, *label.Label) {
 
 	for _, depLabel := range depLabels {
@@ -316,7 +325,7 @@ func isDepOfAnyLibrary(ix *resolve.RuleIndex, depLabels []label.Label, libs []la
 			spec := isDepOfLibrarySpec(depLabel, lib.Pkg, lib.Name)
 			res := ix.FindRulesByImport(spec, gazelleHaskellModulesName)
 
-			if len(res) > 0 {
+			if len(res) > 0 || contains(ixEnricher[lib], depLabel) {
 				return &depLabel, &lib
 			}
 		}
