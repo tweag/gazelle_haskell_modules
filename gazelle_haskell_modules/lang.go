@@ -42,25 +42,7 @@ func (*gazelleHaskellModulesLang) KnownDirectives() []string {
 type Config struct {
 }
 
-func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rule.File) {
-	if f == nil {
-		return
-	}
-
-	m, ok := c.Exts[gazelleHaskellModulesName]
-	var extraConfig Config
-	if ok {
-		extraConfig = m.(Config)
-	} else {
-		extraConfig = Config{}
-	}
-
-	for _, directive := range f.Directives {
-		switch directive.Key {
-		}
-	}
-	c.Exts[gazelleHaskellModulesName] = extraConfig
-}
+func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rule.File) {}
 
 var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
@@ -170,9 +152,8 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 func (*gazelleHaskellModulesLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
 
 func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
-	hmc := c.Exts[gazelleHaskellModulesName].(Config)
 	if isNonHaskellModule(r.Kind()) {
-		setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
+		setNonHaskellModuleDeps(c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
 	} else {
 		setHaskellModuleDeps(ix, r, imports.(*HModuleImportData), from)
 	}
@@ -191,8 +172,7 @@ func (*gazelleHaskellModulesLang) GenerateRules(args language.GenerateArgs) lang
 
 	setVisibilities(args.File, generateResult.Gen)
 
-	c := args.Config.Exts[gazelleHaskellModulesName].(Config)
-	return addNonHaskellModuleRules(&c, args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
+	return addNonHaskellModuleRules(args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
 }
 
 func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {
