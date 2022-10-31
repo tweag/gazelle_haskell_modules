@@ -4,3 +4,5 @@
 # bazel-created symlinks
 bazel-*
 .bazelrc.local
+
+tests/bundled_gazelle/test-project/BUILD.bazel
