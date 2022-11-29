@@ -75,7 +75,7 @@ gazelle_haskell_modules_dependencies()
 stack_snapshot(
     name = "stackage",
     packages = [
-        "hspec",
+        "json",
     ],
     # Most snapshots of your choice might do
     snapshot = "lts-18.28",
