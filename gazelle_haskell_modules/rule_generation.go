@@ -225,7 +225,6 @@ func infoToRules(pkgRoot string, ruleInfos []*RuleInfo) language.GenerateResult 
 }
 
 func addNonHaskellModuleRules(
-	c *Config,
 	pkgRoot string,
 	repo string,
 	pkg string,

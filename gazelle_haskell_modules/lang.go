@@ -4,6 +4,9 @@ package gazelle_haskell_modules
 import (
 	"flag"
 	"fmt"
+	"log"
+	"path"
+	"path/filepath"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -11,10 +14,6 @@ import (
 	"github.com/bazelbuild/bazel-gazelle/repo"
 	"github.com/bazelbuild/bazel-gazelle/resolve"
 	"github.com/bazelbuild/bazel-gazelle/rule"
-
-	"log"
-	"path"
-	"path/filepath"
 )
 
 ////////////////////////////////////////////////////
@@ -39,28 +38,9 @@ func (*gazelleHaskellModulesLang) KnownDirectives() []string {
 	return []string{}
 }
 
-type Config struct {
-}
+type Config struct{}
 
-func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rule.File) {
-	if f == nil {
-		return
-	}
-
-	m, ok := c.Exts[gazelleHaskellModulesName]
-	var extraConfig Config
-	if ok {
-		extraConfig = m.(Config)
-	} else {
-		extraConfig = Config{}
-	}
-
-	for _, directive := range f.Directives {
-		switch directive.Key {
-		}
-	}
-	c.Exts[gazelleHaskellModulesName] = extraConfig
-}
+func (*gazelleHaskellModulesLang) Configure(c *config.Config, rel string, f *rule.File) {}
 
 var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
@@ -110,11 +90,16 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	if r.Kind() == "haskell_module" {
+		// For each haskell module:
 		originatingRules := getOriginatingRules(r)
 		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), 2*len(originatingRules)+1)
+		// A 'moduleByFileSpec' entry is added to the RuleIndex for each rule using this module.
+		// These entries are used by 'SetNonHaskellModuleDeps' to list the modules in the libraries/binaries/tests.
 		for i, originatingRule := range originatingRules {
 			moduleSpecs[i] = moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))
 		}
+		// A 'moduleByModuleImportSpec' entry is added to the RuleIndex for each rule using this module.
+		// These entries are used by 'SetHaskellModuleDeps' to list the dependencies between 'haskell_module' rules.
 		for _, originatingRule := range originatingRules {
 			if originatingRule.Kind() == "haskell_library" {
 				moduleSpecs = append(
@@ -130,6 +115,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 		return moduleSpecs
 	} else if isNonHaskellModule(r.Kind()) {
+		// For each haskell library/library/test:
 		modules := r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS)
 		moduleLabels := map[label.Label]bool{}
 		if modules != nil {
@@ -148,16 +134,22 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			usesModules = 0
 		}
 		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels)+len(libraryDepLabels)+usesModules)
+		// A 'libraryOfModuleSpec' entry is added to the RuleIndex for each module of the rule.
+		// These entries are used by 'SetHaskellModuleDeps' to find the library using a module.
 		i := 0
 		for moduleLabel := range moduleLabels {
 			moduleSpecs[i] = libraryOfModuleSpec(moduleLabel)
 			i++
 		}
+		// A 'isDepOfLibrarySpec' entry is added to the RuleIndex for each dependency of the rule.
+		// These entries are used by 'SetHaskellModuleDeps' to find the dependencies between modules in 'narrowed_deps'.
 		i = 0
 		for libLabel := range libraryDepLabels {
 			moduleSpecs[len(moduleLabels)+i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
 			i++
 		}
+		// A 'libraryUsesModulesSpec' entry is added to the RuleIndex.
+		// These entries are used by 'SetNonHaskellModuleDeps' to know if the dependency to the current lib should be stored as a 'narrowed_deps'.
 		if usesModules > 0 {
 			moduleSpecs[len(moduleSpecs)-1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
 		}
@@ -170,9 +162,8 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 func (*gazelleHaskellModulesLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
 
 func (*gazelleHaskellModulesLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
-	hmc := c.Exts[gazelleHaskellModulesName].(Config)
 	if isNonHaskellModule(r.Kind()) {
-		setNonHaskellModuleDeps(&hmc, c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
+		setNonHaskellModuleDeps(c.RepoRoot, ix, r, imports.(*HRuleImportData), from)
 	} else {
 		setHaskellModuleDeps(ix, r, imports.(*HModuleImportData), from)
 	}
@@ -191,8 +182,7 @@ func (*gazelleHaskellModulesLang) GenerateRules(args language.GenerateArgs) lang
 
 	setVisibilities(args.File, generateResult.Gen)
 
-	c := args.Config.Exts[gazelleHaskellModulesName].(Config)
-	return addNonHaskellModuleRules(&c, args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
+	return addNonHaskellModuleRules(args.Dir, args.Config.RepoName, args.File.Pkg, generateResult, args.File.Rules)
 }
 
 func (*gazelleHaskellModulesLang) Fix(c *config.Config, f *rule.File) {

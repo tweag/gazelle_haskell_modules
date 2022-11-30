@@ -23,7 +23,6 @@ import (
 // from deps that uses the modules attribute is moved to narrowed_deps.
 //
 func setNonHaskellModuleDeps(
-	c *Config,
 	repoRoot string,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
