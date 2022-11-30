@@ -90,17 +90,16 @@ func (*gazelleHaskellModulesLang) Loads() []rule.LoadInfo {
 
 func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
 	if r.Kind() == "haskell_module" {
+		// For each haskell module:
 		originatingRules := getOriginatingRules(r)
 		moduleSpecs := make([]resolve.ImportSpec, len(originatingRules), 2*len(originatingRules)+1)
-		// When studying a 'haskell_module' rule,
-		// a field "filepath:pkg:component:relativePath" for each rule using this module is added to the RuleIndex.
-		// This field is used by 'SetNonHaskellModuleDeps' to list the modules in the libraries/binaries/tests.
+		// A 'moduleByFileSpec' entry is added to the RuleIndex for each rule using this module.
+		// These entries are used by 'SetNonHaskellModuleDeps' to list the modules in the libraries/binaries/tests.
 		for i, originatingRule := range originatingRules {
 			moduleSpecs[i] = moduleByFilepathSpec(f.Pkg, originatingRule.Name(), getSrcFromRule(c.RepoRoot, f.Path, r))
 		}
-		// When studying a 'haskell_module' rule,
-		// a field "module_name:pkg:modName" for each rule using this module is added to the RuleIndex.
-		// This field is used by 'SetHaskellModuleDeps' to list the dependencies between 'haskell_module' rules.
+		// A 'moduleByModuleImportSpec' entry is added to the RuleIndex for each rule using this module.
+		// These entries are used by 'SetHaskellModuleDeps' to list the dependencies between 'haskell_module' rules.
 		for _, originatingRule := range originatingRules {
 			if originatingRule.Kind() == "haskell_library" {
 				moduleSpecs = append(
@@ -116,6 +115,7 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 		}
 		return moduleSpecs
 	} else if isNonHaskellModule(r.Kind()) {
+		// For each haskell library/library/test:
 		modules := r.PrivateAttr(PRIVATE_ATTR_MODULE_LABELS)
 		moduleLabels := map[label.Label]bool{}
 		if modules != nil {
@@ -134,25 +134,22 @@ func (*gazelleHaskellModulesLang) Imports(c *config.Config, r *rule.Rule, f *rul
 			usesModules = 0
 		}
 		moduleSpecs := make([]resolve.ImportSpec, len(moduleLabels)+len(libraryDepLabels)+usesModules)
-		// When studying a 'haskell_library/binary/test',
-		// a field "library_of_module:modLabel" is added to the RuleIndex for each module of the rule.
-		// This field is used by 'SetHaskellModuleDeps' to find the library using a module.
+		// A 'libraryOfModuleSpec' entry is added to the RuleIndex for each module of the rule.
+		// These entries are used by 'SetHaskellModuleDeps' to find the library using a module.
 		i := 0
 		for moduleLabel := range moduleLabels {
 			moduleSpecs[i] = libraryOfModuleSpec(moduleLabel)
 			i++
 		}
-		// When studying a 'haskell_library/binary/test',
-		// a field "is_dep_of:dep:pkg:libName" is added to the RuleIndex for each dependency of the rule.
-		// This field is used by 'SetHaskellModuleDeps' to find the dependencies between modules in 'narrowed_deps'.
+		// A 'isDepOfLibrarySpec' entry is added to the RuleIndex for each dependency of the rule.
+		// These entries are used by 'SetHaskellModuleDeps' to find the dependencies between modules in 'narrowed_deps'.
 		i = 0
 		for libLabel := range libraryDepLabels {
 			moduleSpecs[len(moduleLabels)+i] = isDepOfLibrarySpec(libLabel, f.Pkg, r.Name())
 			i++
 		}
-		// When studying a 'haskell_library/binary/test',
-		// a field "library_uses_modules:libName" is added to the RuleIndex.
-		// This field is used by 'SetNonHaskellModuleDeps' to know if the dependency to the current lib should be stored as a 'narrowed_deps'.
+		// A 'libraryUsesModulesSpec' entry is added to the RuleIndex.
+		// These entries are used by 'SetNonHaskellModuleDeps' to know if the dependency to the current lib should be stored as a 'narrowed_deps'.
 		if usesModules > 0 {
 			moduleSpecs[len(moduleSpecs)-1] = libraryUsesModulesSpec(label.New(c.RepoName, f.Pkg, r.Name()))
 		}
