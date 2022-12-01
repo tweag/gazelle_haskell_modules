@@ -63,7 +63,7 @@ http_archive(
 )
 ```
 
-Additionally, some Haskell packages are needed to build
+Additionally, some Haskell packages(currently [`json`](https://hackage.haskell.org/package/json)) are needed to build
 `gazelle_haskell_modules`. The simplest way to bring them is to use the
 `stack_snapshot` rule in the `WORKSPACE` file as follows.
 
@@ -75,12 +75,14 @@ gazelle_haskell_modules_dependencies()
 stack_snapshot(
     name = "stackage",
     packages = [
-        "hspec",
+        "json",
     ],
     # Most snapshots of your choice might do
     snapshot = "lts-18.28",
 )
 ```
+
+`gazelle_haskell_modules` implicitly depends on the `stackage` external workspace.
 Should Haskell packages need to be grabbed from elsewhere, alternative
 labels can be provided to [gazelle_haskell_modules_dependencies][gazelle_haskell_modules_dependencies].
 
