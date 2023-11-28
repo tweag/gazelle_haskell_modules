@@ -1,1 +1,6 @@
 resolver: lts-19.33
+
+packages:
+# the stackage snapshot has logict 0.7.1.0, but this version has
+# a version constraint of base <0 on hackage; use version 0.7.0.3 instead
+- logict-0.7.0.3
