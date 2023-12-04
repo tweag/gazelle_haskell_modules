@@ -3,4 +3,5 @@
 
 # bazel-created symlinks
 bazel-*
+.bazelrc.auth
 .bazelrc.local
