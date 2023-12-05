@@ -61,6 +61,6 @@ fakeLlvmConfig = LlvmConfig [] []
 
 #else
 
-module HImportScan.GHC.FakeSettings9_2 where
+module HImportScan.GHC.FakeSettings9_4 where
 
 #endif
