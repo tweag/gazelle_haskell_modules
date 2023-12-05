@@ -3,7 +3,7 @@
 #if __GLASGOW_HASKELL__ == 900
 
 -- | A module abstracting the provenance of GHC API names
-module HImportScan.GHC9_0 (module X, imports, handleParseError, X.getOptions) where
+module HImportScan.GHC9_0 (module X, imports, handleParseError) where
 
 import HImportScan.GHC.FakeSettings9_0 as X
 
