@@ -1,15 +1,15 @@
 {-#LANGUAGE CPP #-}
 
-#if __GLASGOW_HASKELL__ == 902
+#if __GLASGOW_HASKELL__ >= 904
 
 -- | A module abstracting the provenance of GHC API names
-module HImportScan.GHC9_2 (module X, imports, handleParseError, X.getOptions) where
+module HImportScan.GHC9_4 (module X, imports, handleParseError, getOptions) where
 
-import HImportScan.GHC.FakeSettings9_2 as X
+import HImportScan.GHC.FakeSettings9_4 as X
 
 import GHC.Driver.Session as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import GHC.Data.EnumSet as X (empty, fromList)
-import GHC.Driver.Errors as X (printBagOfErrors)
+import GHC.Driver.Errors as X (printMessages)
 import GHC.Data.FastString as X (FastString, mkFastString, unpackFS)
 import GHC as X (runGhc, getSessionDynFlags)
 import GHC.LanguageExtensions as X
@@ -23,7 +23,7 @@ import GHC.LanguageExtensions as X
     , MagicHash
     )
   )
-import GHC.Parser.Header as X (getOptions, getImports)
+import GHC.Parser.Header as X (getImports)
 import GHC.Types.SourceError (mkSrcErr)
 import GHC.Parser.Lexer as X
   ( ParseResult(..)
@@ -46,15 +46,23 @@ import GHC.Types.SrcLoc as X
   , unLoc
   )
 import GHC.Data.StringBuffer as X (StringBuffer(StringBuffer), stringToStringBuffer)
-import GHC.Driver.Config
+import GHC.Driver.Config.Parser
 import GHC.Utils.Logger as X
-import GHC.Parser.Errors.Ppr (pprError)
 import Control.Exception (throwIO)
-import GHC.Data.Bag (Bag)
-import GHC.Parser.Errors (PsError)
+import GHC.Parser.Errors.Types (PsMessage)
+import GHC.Driver.Errors.Types (GhcMessage(GhcPsMessage))
+import GHC.Driver.Config.Diagnostic (initDiagOpts)
+import GHC.Types.Error (Messages)
+import GHC.Types.PkgQual (RawPkgQual (RawPkgQual, NoRawPkgQual))
+import qualified GHC.Types.SourceText as StringLiteral (sl_fs)
+import qualified GHC.Parser.Header as PH (getOptions)
 
 initOpts :: DynFlags -> ParserOpts
 initOpts = initParserOpts
+
+getOptions :: DynFlags -> StringBuffer -> FilePath -> [Located String]
+getOptions dynFlags sb filePath =
+  snd $ PH.getOptions (initOpts dynFlags) sb filePath
 
 imports ::
   DynFlags ->
@@ -62,26 +70,33 @@ imports ::
   FilePath ->
   IO
     ( Either
-      (Bag PsError)
+      -- (Bag PsError)
+      (Messages PsMessage)
       ( [(Maybe FastString, Located ModuleName)],
         [(Maybe FastString, Located ModuleName)], Located ModuleName
       )
     )
-imports dynFlagsWithExtensions sb filePath =
+imports dynFlagsWithExtensions sb filePath = do
   -- [GG] We should never care about the Prelude import,
   -- since it is always a module from an external library.
   -- Hence the `False`.
-  getImports (initOpts dynFlagsWithExtensions) False sb filePath filePath
+  imports' <- getImports (initOpts dynFlagsWithExtensions) False sb filePath filePath
 
-handleParseError :: DynFlags -> Bag PsError -> IO a
+  return $ (\ (m1, m2, _, mname) -> (toFastMessage <$> m1, toFastMessage <$> m2, mname)) `fmap` imports'
+  where
+    toFastMessage (NoRawPkgQual, b) = (Nothing, b)
+    toFastMessage (RawPkgQual stringLit, b) = (Just $ StringLiteral.sl_fs stringLit, b)
+
+handleParseError :: DynFlags -> Messages PsMessage -> IO a
 handleParseError dynFlagsWithExtensions err = do
   logger <- initLogger
-  let errEnvelope = pprError <$> err
-  printBagOfErrors logger dynFlagsWithExtensions errEnvelope
-  throwIO (mkSrcErr errEnvelope)
+  let diagOpts = initDiagOpts dynFlagsWithExtensions
+      ghcErrors = GhcPsMessage <$> err
+  printMessages logger diagOpts err
+  throwIO (mkSrcErr ghcErrors)
 
 #else
 
-module HImportScan.GHC9_2 where
+module HImportScan.GHC9_4 where
 
 #endif

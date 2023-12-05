@@ -1,0 +1,7 @@
+resolver: lts-21.11
+
+packages:
+- git: https://github.com/tweag/cabal
+  commit: 4f8c4ab8274320c1a00992c9aa7c6559ff190fa9
+  subdirs:
+  - Cabal
