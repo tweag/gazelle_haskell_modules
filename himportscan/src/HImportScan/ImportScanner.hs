@@ -26,7 +26,9 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import System.Directory (doesFileExist)
 
-#if __GLASGOW_HASKELL__ >= 902
+#if __GLASGOW_HASKELL__ >= 904
+import HImportScan.GHC9_4 as GHC
+#elif __GLASGOW_HASKELL__ >= 902
 import HImportScan.GHC9_2 as GHC
 #elif __GLASGOW_HASKELL__ == 900
 import HImportScan.GHC9_0 as GHC
