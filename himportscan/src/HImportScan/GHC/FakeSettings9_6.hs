@@ -2,19 +2,20 @@
 -- SPDX-License-Identifier: BSD-3-Clause.
 {-#LANGUAGE CPP #-}
 
-#if __GLASGOW_HASKELL__ == 904
+#if __GLASGOW_HASKELL__ >= 906
 
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- This file is a single code path copied over from https://hackage.haskell.org/package/ghc-lib-parser-ex-8.10.0.24/docs/src/Language.Haskell.GhclibParserEx.GHC.Settings.Config.html
 -- TODO[GL]: We can get rid of this file once we only support >=9.2, as ParserOpts are much smaller there.
-module HImportScan.GHC.FakeSettings9_4(
+module HImportScan.GHC.FakeSettings9_6(
     fakeSettings
   , fakeLlvmConfig
   )
 where
 
+import GHC.CmmToLlvm.Config (LlvmConfig (..))
 import GHC.Settings.Config
 import GHC.Driver.Session
 import GHC.Utils.Fingerprint

@@ -1,11 +1,11 @@
 {-#LANGUAGE CPP #-}
 
-#if __GLASGOW_HASKELL__ == 904
+#if __GLASGOW_HASKELL__ >= 906
 
 -- | A module abstracting the provenance of GHC API names
-module HImportScan.GHC9_4 (module X, imports, handleParseError, getOptions) where
+module HImportScan.GHC9_6 (module X, imports, handleParseError, getOptions) where
 
-import HImportScan.GHC.FakeSettings9_4 as X
+import HImportScan.GHC.FakeSettings9_6 as X
 
 import GHC.Driver.Session as X (DynFlags, defaultDynFlags, xopt_set, xopt_unset)
 import GHC.Data.EnumSet as X (empty, fromList)
@@ -24,6 +24,7 @@ import GHC.LanguageExtensions as X
     )
   )
 import GHC.Parser.Header as X (getImports)
+import GHC.Types.Error (NoDiagnosticOpts (..))
 import GHC.Types.SourceError (mkSrcErr)
 import GHC.Parser.Lexer as X
   ( ParseResult(..)
@@ -92,11 +93,11 @@ handleParseError dynFlagsWithExtensions err = do
   logger <- initLogger
   let diagOpts = initDiagOpts dynFlagsWithExtensions
       ghcErrors = GhcPsMessage <$> err
-  printMessages logger diagOpts err
+  printMessages logger NoDiagnosticOpts diagOpts err
   throwIO (mkSrcErr ghcErrors)
 
 #else
 
-module HImportScan.GHC9_4 where
+module HImportScan.GHC9_6 where
 
 #endif
