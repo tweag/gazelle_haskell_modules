@@ -10,7 +10,7 @@ haskell_binary(
         "app/Main.hs",
         "app/PackageA/Other/C.hs",
     ],
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    ghcopts = ["-DVERSION_package_a=\"0.1.0.0\""],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
@@ -25,7 +25,7 @@ haskell_binary(
         "app/Main.hs",
         "app/PackageA/Other/C.hs",
     ],
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    ghcopts = ["-DVERSION_package_a=\"0.1.0.0\""],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
@@ -41,7 +41,7 @@ haskell_library(
         "src/PackageA/Other/B.hs",
         "src/PackageA/Other/D.lhs",
     ],
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_a=\"0.1.0.0\"",
         "-Wall",
         "-Werror",

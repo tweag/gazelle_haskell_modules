@@ -5,7 +5,7 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 # gazelle_haskell_modules:srcs: src/
 haskell_library(
     name = "package-c",
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
@@ -30,7 +30,7 @@ haskell_library(
         "explicit-src/Explicit/DepOnAuto.hs",
         "explicit-src/Autodetect/Root.hs",
     ],
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
@@ -48,7 +48,7 @@ haskell_library(
 # gazelle_haskell_modules:srcs: src/ multiple-folder-src/
 haskell_library(
     name = "package-c-multiple-srcs",
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
@@ -72,7 +72,7 @@ haskell_library(
 # gazelle_haskell_modules:srcs: add-module-src/
 haskell_library(
     name = "package-c-detect-new",
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
@@ -104,7 +104,7 @@ haskell_test(
         "tests/Main.hs",
         "tests/PackageC/Other/C.hs",
     ],
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-DTASTY_DISCOVER_TASTY_DISCOVER_PATH=$(location @stackage-exe//tasty-discover)",
     ],

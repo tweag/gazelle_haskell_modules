@@ -89,7 +89,7 @@ load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 haskell_register_ghc_nixpkgs(
     attribute_path =
         "haskell.compiler.ghc" + ghc_version.replace(".", ""),
-    compiler_flags = [
+    ghcopts = [
         "-Werror",
         "-Wall",
         "-Wcompat",

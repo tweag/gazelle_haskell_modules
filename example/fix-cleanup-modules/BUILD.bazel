@@ -20,7 +20,7 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 
 haskell_library(
     name = "fix-cleanup-modules",
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
@@ -49,7 +49,7 @@ haskell_library(
 # gazelle_haskell_modules:keep
 haskell_library(
     name = "left-alone",
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",

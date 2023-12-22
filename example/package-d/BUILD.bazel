@@ -3,7 +3,7 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 
 haskell_library(
     name = "package-d",
-    compiler_flags = [
+    ghcopts = [
         "-XScopedTypeVariables",
         "-lm",
     ],
@@ -28,7 +28,7 @@ haskell_test(
         "tests/Main.hs",
         "tests/PackageD/C.hs",
     ],
-    compiler_flags = [
+    ghcopts = [
         "-DVERSION_package_d=\"0.1.0.0\"",
         "-DTASTY_DISCOVER_TASTY_DISCOVER_PATH=$(location @stackage-exe//tasty-discover)",
     ],
