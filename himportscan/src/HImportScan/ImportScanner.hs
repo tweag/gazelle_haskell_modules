@@ -26,7 +26,9 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import System.Directory (doesFileExist)
 
-#if __GLASGOW_HASKELL__ >= 904
+#if   __GLASGOW_HASKELL__ >= 906
+import HImportScan.GHC9_6 as GHC
+#elif __GLASGOW_HASKELL__ == 904
 import HImportScan.GHC9_4 as GHC
 #elif __GLASGOW_HASKELL__ >= 902
 import HImportScan.GHC9_2 as GHC
@@ -112,8 +114,12 @@ scanImports filePath contents = do
 
   -- TODO[GL]: Once we're on ghc 9.2 we can get rid of all the things relating to dynFlags, and use the much smaller
   -- ParserOpts, as getImports no longer depends on DynFlags then.
-  let dynFlagsWithExtensions = toggleDynFlags $ GHC.defaultDynFlags GHC.fakeSettings GHC.fakeLlvmConfig
-
+  let dynFlagsWithExtensions = toggleDynFlags $
+#if __GLASGOW_HASKELL__ >= 906
+        GHC.defaultDynFlags GHC.fakeSettings
+#else
+        GHC.defaultDynFlags GHC.fakeSettings GHC.fakeLlvmConfig
+#endif
   let
     -- [GL] The fact that the resulting strings here contain the "-X"s makes me a bit doubtful that this is the right approach,
     -- but this is what I found for now.
