@@ -150,7 +150,7 @@ gazelle_dependencies()
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "5b7fe9aa131ab64a51de4da3668005cf58418c967438ce129aad24fd3e6dfaa9",
-    strip_prefix = "buildtools-4890966c38b910fd5bd1ad78a3dd88538d09854f",
-    url = "https://github.com/bazelbuild/buildtools/archive/4890966c38b910fd5bd1ad78a3dd88538d09854f.zip",
+    sha256 = "88199233bae34cfdd1c9712c6a533da41ef02db52dbe9bf61be54549d3527ff2",
+    strip_prefix = "buildtools-92a716d768c05fa90e241fd2c2b0411125a0ef89",
+    url = "https://github.com/bazelbuild/buildtools/archive/92a716d768c05fa90e241fd2c2b0411125a0ef89.zip",
 )
