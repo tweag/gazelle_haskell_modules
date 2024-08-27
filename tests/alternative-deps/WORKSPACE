@@ -8,6 +8,34 @@ local_repository(
 )
 
 ##########################
+# bazel-skylib preamble
+##########################
+
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "cd55a062e763b9349921f0f5db8c3933288dc8ba4f76dd9416aac68acee3cb94",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.5.0/bazel-skylib-1.5.0.tar.gz",
+    ],
+)
+
+##########################
+# rules_nixpkgs preamble
+##########################
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = "1adb04dc0416915fef427757f4272c4f7dacefeceeefc50f683aec7f7e9b787a",
+    strip_prefix = "rules_nixpkgs-0.12.0",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.12.0/rules_nixpkgs-0.12.0.tar.gz"],
+)
+
+load("@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl", "rules_nixpkgs_dependencies")
+
+rules_nixpkgs_dependencies()
+
+##########################
 # rules_haskell preamble
 ##########################
 
@@ -141,7 +169,6 @@ load(
 )
 
 nixpkgs_go_configure(
-    attribute_path = "go_1_20",
     repository = "@nixpkgs",
 )
 

@@ -119,7 +119,6 @@ load(
 )
 
 nixpkgs_go_configure(
-    attribute_path = "go_1_20",
     repository = "@nixpkgs",
 )
 
