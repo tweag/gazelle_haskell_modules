@@ -3,6 +3,51 @@ workspace(name = "io_tweag_gazelle_haskell_modules")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 ##########################
+# rules_proto preamble
+##########################
+
+http_archive(
+    name = "rules_proto",
+    sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
+    strip_prefix = "rules_proto-6.0.2",
+    url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
+)
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
+
+rules_proto_dependencies()
+
+load("@rules_proto//proto:setup.bzl", "rules_proto_setup")
+
+rules_proto_setup()
+
+load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
+
+rules_proto_toolchains()
+
+##########################
+# rules_nixpkgs preamble
+##########################
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = "1adb04dc0416915fef427757f4272c4f7dacefeceeefc50f683aec7f7e9b787a",
+    strip_prefix = "rules_nixpkgs-0.12.0",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.12.0/rules_nixpkgs-0.12.0.tar.gz"],
+)
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl",
+    "rules_nixpkgs_dependencies",
+)
+
+rules_nixpkgs_dependencies(toolchains = [
+    "go",
+    "python",
+    "posix",
+])
+
+##########################
 # rules_haskell preamble
 ##########################
 
@@ -18,8 +63,11 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 rules_haskell_dependencies()
 
 load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
+)
+load(
+    "@rules_nixpkgs_python//:python.bzl",
     "nixpkgs_python_configure",
 )
 
@@ -106,15 +154,15 @@ haskell_register_ghc_nixpkgs(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "6b65cb7917b4d1709f9410ffe00ecf3e160edf674b78c54a894471320862184f",
+    sha256 = "67b4d1f517ba73e0a92eb2f57d821f2ddc21f5bc2bd7a231573f11bd8758192e",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.0/rules_go-v0.39.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.39.0/rules_go-v0.39.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.50.0/rules_go-v0.50.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.50.0/rules_go-v0.50.0.zip",
     ],
 )
 
 load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
+    "@rules_nixpkgs_go//:go.bzl",
     "nixpkgs_go_configure",
 )
 
