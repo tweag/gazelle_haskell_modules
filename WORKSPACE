@@ -26,6 +26,28 @@ load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
 rules_proto_toolchains()
 
 ##########################
+# rules_nixpkgs preamble
+##########################
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = "1adb04dc0416915fef427757f4272c4f7dacefeceeefc50f683aec7f7e9b787a",
+    strip_prefix = "rules_nixpkgs-0.12.0",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.12.0/rules_nixpkgs-0.12.0.tar.gz"],
+)
+
+load(
+    "@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl",
+    "rules_nixpkgs_dependencies",
+)
+
+rules_nixpkgs_dependencies(toolchains = [
+    "go",
+    "python",
+    "posix",
+])
+
+##########################
 # rules_haskell preamble
 ##########################
 
@@ -41,8 +63,11 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 rules_haskell_dependencies()
 
 load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
+    "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
+)
+load(
+    "@rules_nixpkgs_python//:python.bzl",
     "nixpkgs_python_configure",
 )
 
@@ -137,7 +162,7 @@ http_archive(
 )
 
 load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
+    "@rules_nixpkgs_go//:go.bzl",
     "nixpkgs_go_configure",
 )
 
