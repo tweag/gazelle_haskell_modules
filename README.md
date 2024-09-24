@@ -6,7 +6,7 @@ This is a [gazelle][gazelle] extension that generates `haskell_module`
 rules from `haskell_library`, `haskell_binary`, and `haskell_test` as
 defined in [Haskell rules][rules_haskell] for [Bazel][bazel]. Moreover,
 it updates the dependencies of the generated rules whenever the import
-declarions are changed in the source files.
+declarations are changed in the source files.
 
 For each `haskell_library`, `haskell_binary`, and `haskell_test` rule,
 `haskell_module` rules are generated in the same `BUILD` file for all
