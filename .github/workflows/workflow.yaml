@@ -42,7 +42,6 @@ jobs:
       - name: Configure
         run: |
           cat >>.bazelrc.local <<EOF
-          build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
           build --config=remote-cache
           build --repository_cache=~/repo-cache/
           EOF
