@@ -4,11 +4,13 @@ exports_files(["defs.bzl"])
 
 buildifier(
     name = "buildifier-diff",
+    buildifier = "@buildifier//:buildifier",
     diff_command = "diff -u",
     mode = "diff",
 )
 
 buildifier(
     name = "buildifier",
+    buildifier = "@buildifier//:buildifier",
     lint_mode = "warn",
 )
