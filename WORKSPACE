@@ -65,6 +65,7 @@ rules_haskell_dependencies()
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
+    "nixpkgs_package",
 )
 load(
     "@rules_nixpkgs_python//:python.bzl",
@@ -78,7 +79,15 @@ nixpkgs_local_repository(
 
 nixpkgs_python_configure(repository = "@nixpkgs")
 
-load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+nixpkgs_package(
+    name = "stack",
+    attribute_path = "stack",
+    repository = "@nixpkgs",
+)
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot", "use_stack")
+
+use_stack("@stack//:bin/stack")
 
 ######################################
 # Haskell dependencies and toolchain
