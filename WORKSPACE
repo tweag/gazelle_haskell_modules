@@ -65,6 +65,7 @@ rules_haskell_dependencies()
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
+    "nixpkgs_package",
 )
 load(
     "@rules_nixpkgs_python//:python.bzl",
@@ -78,7 +79,15 @@ nixpkgs_local_repository(
 
 nixpkgs_python_configure(repository = "@nixpkgs")
 
-load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+nixpkgs_package(
+    name = "stack",
+    attribute_path = "stack",
+    repository = "@nixpkgs",
+)
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot", "use_stack")
+
+use_stack("@stack//:bin/stack")
 
 ######################################
 # Haskell dependencies and toolchain
@@ -195,9 +204,14 @@ gazelle_dependencies()
 # Buildifier preamble
 #######################
 
-http_archive(
-    name = "com_github_bazelbuild_buildtools",
-    sha256 = "53119397bbce1cd7e4c590e117dcda343c2086199de62932106c80733526c261",
-    strip_prefix = "buildtools-8.2.1",
-    url = "https://github.com/bazelbuild/buildtools/archive/refs/tags/v8.2.1.tar.gz",
+nixpkgs_package(
+    name = "buildifier",
+    attribute_path = "buildifier",
+    build_file_content = """\
+filegroup(
+  name = "buildifier",
+  srcs = ["bin/buildifier"],
+  visibility = ["//visibility:public"]
+)""",
+    repository = "@nixpkgs",
 )
