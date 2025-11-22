@@ -26,7 +26,7 @@ jobs:
         ghc-version: ["ghc_8_10_7", "ghc_9_0_2", "ghc_9_2_5", "ghc_9_4_5", "ghc_9_6_5", "ghc_9_8_1"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Mount Bazel cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
