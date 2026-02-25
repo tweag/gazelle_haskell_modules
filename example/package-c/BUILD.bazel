@@ -27,8 +27,8 @@ haskell_library(
 haskell_library(
     name = "package-c-explicit-srcs",
     srcs = [
-        "explicit-src/Explicit/DepOnAuto.hs",
         "explicit-src/Autodetect/Root.hs",
+        "explicit-src/Explicit/DepOnAuto.hs",
     ],
     ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
@@ -112,9 +112,9 @@ haskell_test(
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
     deps = [
-        ":package-c",
         ":check-package-c-explicit-srcs",
         ":check-package-c-multiple-srcs",
+        ":package-c",
         "@stackage//:base",
         "@stackage//:tasty",
         "@stackage//:tasty-hunit",
@@ -142,8 +142,8 @@ haskell_library(
     name = "check-package-c-explicit-srcs",
     srcs = ["checksrc/CheckPackageCExplicit.hs"],
     deps = [
-        "@stackage//:base",
         ":package-c-explicit-srcs",
+        "@stackage//:base",
     ],
 )
 
@@ -151,7 +151,7 @@ haskell_library(
     name = "check-package-c-multiple-srcs",
     srcs = ["checksrc/CheckPackageCMultipleSrcs.hs"],
     deps = [
-        "@stackage//:base",
         ":package-c-multiple-srcs",
+        "@stackage//:base",
     ],
 )

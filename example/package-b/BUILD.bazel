@@ -6,12 +6,12 @@ haskell_library(
         "src/PackageB/Exposed/A.hs",
         "src/PackageB/Other/B.hs",
     ],
+    data = ["CHANGELOG.md"],
     ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
         "-lm",
     ],
-    data = ["CHANGELOG.md"],
     hidden_modules = ["PackageB.Other.B"],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
