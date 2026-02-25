@@ -1,5 +1,5 @@
-load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
+load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 
 # Test that when the src for a module is deleted, the fix command
 # will
@@ -16,7 +16,6 @@ load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 # Similarly, if hidden_modules which are not meant to be deleted aren't preserved,
 # GHC will complain about ambiguity when building test, since two dependencies
 # exposing PackageB.Other.D would exist.
-
 
 haskell_library(
     name = "fix-cleanup-modules",
@@ -49,6 +48,10 @@ haskell_library(
 # gazelle_haskell_modules:keep
 haskell_library(
     name = "left-alone",
+    srcs = [
+        "src/PackageB/Exposed/A.hs",
+        "src/PackageB/Other/D.hs",
+    ],
     ghcopts = [
         "-DVERSION_package_b=\"0.1.0.0\"",
         "-XScopedTypeVariables",
@@ -56,10 +59,6 @@ haskell_library(
     ],
     hidden_modules = [
         "PackageB.Exposed.A",
-    ],
-    srcs = [
-        "src/PackageB/Exposed/A.hs",
-        "src/PackageB/Other/D.hs",
     ],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],

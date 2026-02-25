@@ -1,17 +1,19 @@
-load("@rules_haskell//haskell/experimental:defs.bzl", "haskell_module")
 load("@rules_haskell//haskell:defs.bzl", "haskell_library", "haskell_test")
 
 haskell_library(
     name = "package-d",
+    srcs = [
+        "src/PackageD/A.hs",
+        "src/PackageD/A.hs-boot",
+        "src/PackageD/B.hs",
+    ],
+    data = [
+        "CHANGELOG.md",
+        "README.md",
+    ],
     ghcopts = [
         "-XScopedTypeVariables",
         "-lm",
-    ],
-    data = ["CHANGELOG.md", "README.md"],
-    srcs = [
-        "src/PackageD/A.hs",
-        "src/PackageD/B.hs",
-        "src/PackageD/A.hs-boot"
     ],
     version = "0.1.0.0",
     visibility = ["//visibility:public"],
