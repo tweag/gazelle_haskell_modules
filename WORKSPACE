@@ -53,6 +53,8 @@ rules_nixpkgs_dependencies(toolchains = [
 
 http_archive(
     name = "rules_haskell",
+    patch_args = ["-p1"],
+    patches = ["//:stack_debug.diff"],
     sha256 = "4cae22bc84f327bf3cb7605021c3663160ff6bc8a0b7b6266062366bcbd19e79",
     strip_prefix = "rules_haskell-1.0",
     url = "https://github.com/tweag/rules_haskell/releases/download/v1.0/rules_haskell-1.0.tar.gz",
