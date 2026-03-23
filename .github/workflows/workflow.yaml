@@ -82,6 +82,6 @@ jobs:
       - test-nixpkgs
     if: ${{ always() }}
     steps:
-      - uses: cgrindel/gha_join_jobs@605424defceef3181c9fde3df903ea8ec35e267a # v1
+      - uses: cgrindel/gha_join_jobs@605424defceef3181c9fde3df903ea8ec35e267a # v1.5.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
