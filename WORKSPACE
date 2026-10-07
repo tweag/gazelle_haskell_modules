@@ -62,6 +62,14 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+maybe(
+    host_platform_repo,
+    "host_platform",
+)
+
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
