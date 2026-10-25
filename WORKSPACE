@@ -3,29 +3,6 @@ workspace(name = "io_tweag_gazelle_haskell_modules")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 ##########################
-# rules_proto preamble
-##########################
-
-http_archive(
-    name = "rules_proto",
-    sha256 = "6fb6767d1bef535310547e03247f7518b03487740c11b6c6adb7952033fe1295",
-    strip_prefix = "rules_proto-6.0.2",
-    url = "https://github.com/bazelbuild/rules_proto/releases/download/6.0.2/rules_proto-6.0.2.tar.gz",
-)
-
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
-
-rules_proto_dependencies()
-
-load("@rules_proto//proto:setup.bzl", "rules_proto_setup")
-
-rules_proto_setup()
-
-load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
-
-rules_proto_toolchains()
-
-##########################
 # rules_nixpkgs preamble
 ##########################
 
@@ -34,6 +11,24 @@ http_archive(
     sha256 = "54025689367205b835198677e686d8208b570bfd84e6872684ae657747673b97",
     strip_prefix = "rules_nixpkgs-0.14.1",
     urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+)
+
+http_archive(
+    name = "platforms",
+    sha256 = "dbad4a23abcca6171e47b79edc53bd6a41067a3b75f9e8b104656b459ff25046",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/1.1.0/platforms-1.1.0.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/1.1.0/platforms-1.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bazel_skylib",
+    sha256 = "bc283cdfcd526a52c3201279cda4bc298652efa898b10b4db0837dc51652756f",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.7.1/bazel-skylib-1.7.1.tar.gz",
+    ],
 )
 
 load(
