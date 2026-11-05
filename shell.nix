@@ -9,7 +9,7 @@ mkShell {
   # See: https://github.com/bazelbuild/bazel/issues/4231
   BAZEL_USE_CPP_ONLY_TOOLCHAIN=1;
   packages = [
-    bazel_6
+    bazel_7
     binutils
     cacert
     diffutils # for buildifier-diff
@@ -21,4 +21,3 @@ mkShell {
     less
   ];
 }
-
